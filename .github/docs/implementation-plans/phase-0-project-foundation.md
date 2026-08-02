@@ -56,8 +56,8 @@
 
 ### Commit 4 — `core/services`と`core/storage`の抽象
 
-- [ ] `InterstitialAdService`、`AudioService`、`ShareService`の抽象クラスを`core/services`へ追加する
-- [ ] `LocalProfileStore`の抽象クラスを`core/storage`へ追加する
+- [x] `InterstitialAdService`、`AudioService`、`ShareService`の抽象クラスを`core/services`へ追加する
+- [x] `AppPreferencesStore`の抽象クラスを`core/storage`へ追加する
 - 対象ファイル：`app/lib/core/services/**`、`app/lib/core/storage/**`
 - 検証：差分確認（変更量が多い場合のみ部分検証）
 - 完了条件：抽象定義のみで実装を持たない
@@ -88,3 +88,4 @@
 | 1      | `main.dart`を`ProviderScope`+最小プレースホルダーへ置換、カウンターデモとテストを撤去         | `flutter analyze`: No issues found / `dart format`: 1 file changed（適用済み）/ `flutter test`: 1 passed |
 | 2      | `lib/app`、`lib/core`、`lib/features`、`lib/shared` の骨組みを `.gitkeep` で作成              | 差分確認のみ（検証方針変更によりフル `format` / `analyze` / `test` はPhase完了時に実施）                 |
 | 3      | `features/game` に `presentation` / `application` / `domain` / `repositories` / `data` を作成 | 差分確認のみ（フル `format` / `analyze` / `test` はPhase完了時に実施）                                   |
+| 4      | `core/services` に広告・音声・共有の抽象、`core/storage` に `AppPreferencesStore` 抽象を追加  | 差分確認のみ（フル `format` / `analyze` / `test` はPhase完了時に実施）                                   |

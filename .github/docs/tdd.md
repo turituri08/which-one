@@ -107,7 +107,7 @@ lib/
       share/
         share_service.dart
     storage/
-      local_profile_store.dart
+      app_preferences_store.dart
     utils/
   features/
     game/
