@@ -2,6 +2,17 @@
 
 A new Flutter project.
 
+## Local Verification
+
+Run the following commands from `app/`.
+
+```bash
+flutter pub get
+dart format .
+flutter analyze
+flutter test
+```
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
