@@ -42,7 +42,7 @@
 
 ### Commit 2 — Feature-first + MVVM構成の骨組み作成
 
-- [ ] `lib/app/`、`lib/core/`、`lib/features/`、`lib/shared/`のディレクトリ骨組みを作成する
+- [x] `lib/app/`、`lib/core/`、`lib/features/`、`lib/shared/`のディレクトリ骨組みを作成する
 - 対象ファイル：`app/lib/app/**`、`app/lib/core/**`、`app/lib/shared/**`
 - 検証：差分確認（フル検証はPhase完了時）
 - 完了条件：TDD 3.2の構成と一致する
@@ -86,3 +86,4 @@
 | Commit | 内容                                                                                  | 検証結果                                                                                                 |
 | ------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | 1      | `main.dart`を`ProviderScope`+最小プレースホルダーへ置換、カウンターデモとテストを撤去 | `flutter analyze`: No issues found / `dart format`: 1 file changed（適用済み）/ `flutter test`: 1 passed |
+| 2      | `lib/app`、`lib/core`、`lib/features`、`lib/shared` の骨組みを `.gitkeep` で作成      | 差分確認のみ（検証方針変更によりフル `format` / `analyze` / `test` はPhase完了時に実施）                 |
