@@ -49,7 +49,7 @@
 
 ### Commit 3 — `game` Featureの層配置
 
-- [ ] `lib/features/game/`配下に`presentation`/`application`/`domain`/`repositories`/`data`を作成する
+- [x] `lib/features/game/`配下に`presentation`/`application`/`domain`/`repositories`/`data`を作成する
 - 対象ファイル：`app/lib/features/game/**`
 - 検証：差分確認（フル検証はPhase完了時）
 - 完了条件：空層も含め、TDDの`game` Feature構成と一致する
@@ -83,7 +83,8 @@
 
 ## 実施記録
 
-| Commit | 内容                                                                                  | 検証結果                                                                                                 |
-| ------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 1      | `main.dart`を`ProviderScope`+最小プレースホルダーへ置換、カウンターデモとテストを撤去 | `flutter analyze`: No issues found / `dart format`: 1 file changed（適用済み）/ `flutter test`: 1 passed |
-| 2      | `lib/app`、`lib/core`、`lib/features`、`lib/shared` の骨組みを `.gitkeep` で作成      | 差分確認のみ（検証方針変更によりフル `format` / `analyze` / `test` はPhase完了時に実施）                 |
+| Commit | 内容                                                                                          | 検証結果                                                                                                 |
+| ------ | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 1      | `main.dart`を`ProviderScope`+最小プレースホルダーへ置換、カウンターデモとテストを撤去         | `flutter analyze`: No issues found / `dart format`: 1 file changed（適用済み）/ `flutter test`: 1 passed |
+| 2      | `lib/app`、`lib/core`、`lib/features`、`lib/shared` の骨組みを `.gitkeep` で作成              | 差分確認のみ（検証方針変更によりフル `format` / `analyze` / `test` はPhase完了時に実施）                 |
+| 3      | `features/game` に `presentation` / `application` / `domain` / `repositories` / `data` を作成 | 差分確認のみ（フル `format` / `analyze` / `test` はPhase完了時に実施）                                   |
