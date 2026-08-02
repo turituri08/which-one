@@ -64,8 +64,8 @@
 
 ### Commit 5 — テーマと最小タイトル画面
 
-- [ ] 白・黒・グレー基調の`AppTheme`を追加する
-- [ ] `home` Featureに最小限のタイトル画面を追加し、`go_router`で空のゲーム画面へ遷移できるようにする
+- [x] 白・黒・グレー基調の`AppTheme`を追加する
+- [x] `home` Featureに最小限のタイトル画面を追加し、`go_router`で空のゲーム画面へ遷移できるようにする
 - 対象ファイル：`app/lib/app/app_theme.dart`、`app/lib/app/**`、`app/lib/features/home/**`
 - 検証：必要に応じて部分`flutter test`（フル検証はPhase完了時）
 - 完了条件：タイトル画面からゲーム画面への遷移、ゲーム画面からタイトルへ戻る導線が動作する
@@ -83,9 +83,10 @@
 
 ## 実施記録
 
-| Commit | 内容                                                                                          | 検証結果                                                                                                 |
-| ------ | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 1      | `main.dart`を`ProviderScope`+最小プレースホルダーへ置換、カウンターデモとテストを撤去         | `flutter analyze`: No issues found / `dart format`: 1 file changed（適用済み）/ `flutter test`: 1 passed |
-| 2      | `lib/app`、`lib/core`、`lib/features`、`lib/shared` の骨組みを `.gitkeep` で作成              | 差分確認のみ（検証方針変更によりフル `format` / `analyze` / `test` はPhase完了時に実施）                 |
-| 3      | `features/game` に `presentation` / `application` / `domain` / `repositories` / `data` を作成 | 差分確認のみ（フル `format` / `analyze` / `test` はPhase完了時に実施）                                   |
-| 4      | `core/services` に広告・音声・共有の抽象、`core/storage` に `AppPreferencesStore` 抽象を追加  | 差分確認のみ（フル `format` / `analyze` / `test` はPhase完了時に実施）                                   |
+| Commit | 内容                                                                                                                                        | 検証結果                                                                                                        |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1      | `main.dart`を`ProviderScope`+最小プレースホルダーへ置換、カウンターデモとテストを撤去                                                       | `flutter analyze`: No issues found / `dart format`: 1 file changed（適用済み）/ `flutter test`: 1 passed        |
+| 2      | `lib/app`、`lib/core`、`lib/features`、`lib/shared` の骨組みを `.gitkeep` で作成                                                            | 差分確認のみ（検証方針変更によりフル `format` / `analyze` / `test` はPhase完了時に実施）                        |
+| 3      | `features/game` に `presentation` / `application` / `domain` / `repositories` / `data` を作成                                               | 差分確認のみ（フル `format` / `analyze` / `test` はPhase完了時に実施）                                          |
+| 4      | `core/services` に広告・音声・共有の抽象、`core/storage` に `AppPreferencesStore` 抽象を追加                                                | 差分確認のみ（フル `format` / `analyze` / `test` はPhase完了時に実施）                                          |
+| 5      | 白黒グレー基調の `AppTheme`、`core/constants` への色/文言集約、`app/routing` へのルート集約、タイトル画面から空ゲーム画面への遷移導線を追加 | `flutter test`: title -> game -> title の遷移テストのみ実行（フル `format` / `analyze` / `test` はPhase完了時） |
