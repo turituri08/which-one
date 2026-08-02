@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:app/app/app.dart';
 
 void main() {
-  testWidgets('title screen navigates to game and back', (WidgetTester tester) async {
+  testWidgets('title screen navigates to game and back', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const ProviderScope(child: WhichOneApp()));
 
     expect(find.text('どっち'), findsOneWidget);

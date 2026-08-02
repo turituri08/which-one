@@ -2,7 +2,7 @@
 
 | 項目        | 内容                                                              |
 | ----------- | ----------------------------------------------------------------- |
-| ステータス  | Approved                                                          |
+| ステータス  | Completed                                                         |
 | 対象Roadmap | Phase 0（開発基盤）                                               |
 | 関連設計    | vision.md / gdd.md / tdd.md（3.2 ディレクトリ構成、3.3 責務区分） |
 
@@ -72,7 +72,7 @@
 
 ### Commit 6 — ローカル検証手順の明文化
 
-- [ ] README等に`flutter test`・`flutter analyze`・`dart format`のローカル実行手順を追記する
+- [x] README等に`flutter test`・`flutter analyze`・`dart format`のローカル実行手順を追記する
 - 対象ファイル：`app/README.md`
 - 検証：手順に従いローカルで再現できることを確認（Phase完了時にフル検証）
 - 完了条件：手順を初見で実行できる
@@ -90,3 +90,4 @@
 | 3      | `features/game` に `presentation` / `application` / `domain` / `repositories` / `data` を作成                                               | 差分確認のみ（フル `format` / `analyze` / `test` はPhase完了時に実施）                                          |
 | 4      | `core/services` に広告・音声・共有の抽象、`core/storage` に `AppPreferencesStore` 抽象を追加                                                | 差分確認のみ（フル `format` / `analyze` / `test` はPhase完了時に実施）                                          |
 | 5      | 白黒グレー基調の `AppTheme`、`core/constants` への色/文言集約、`app/routing` へのルート集約、タイトル画面から空ゲーム画面への遷移導線を追加 | `flutter test`: title -> game -> title の遷移テストのみ実行（フル `format` / `analyze` / `test` はPhase完了時） |
+| 6      | README にローカル検証手順を追記                                                                                                             | `dart format .`: 14 files/3 changed、`flutter analyze`: No issues found、`flutter test`: All tests passed       |

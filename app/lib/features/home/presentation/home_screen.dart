@@ -16,7 +16,10 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(AppStrings.appTitle, style: Theme.of(context).textTheme.displaySmall),
+              Text(
+                AppStrings.appTitle,
+                style: Theme.of(context).textTheme.displaySmall,
+              ),
               const SizedBox(height: 12),
               Text(
                 AppStrings.homeTagline,
