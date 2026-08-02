@@ -34,8 +34,8 @@
 
 ### Commit 1 — Riverpod・テスト・静的解析・フォーマットの基本設定
 
-- [ ] `main.dart`を`ProviderScope`でラップし、プロジェクト名に沿った最小のプレースホルダー画面に置き換える
-- [ ] デフォルトのカウンターデモとそのテストを撤去する
+- [x] `main.dart`を`ProviderScope`でラップし、プロジェクト名に沿った最小のプレースホルダー画面に置き換える
+- [x] デフォルトのカウンターデモとそのテストを撤去する
 - 対象ファイル：`app/lib/main.dart`、`app/test/widget_test.dart`
 - 検証：`flutter analyze`、`dart format --output=none --set-exit-if-changed .`、`flutter test`
 - 完了条件：3つの検証コマンドがエラーなく完了する
