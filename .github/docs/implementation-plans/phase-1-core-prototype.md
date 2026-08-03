@@ -57,13 +57,13 @@
 
 ### Commit 2 — チャレンジ開始UseCaseの実装
 
-- [ ] `StartChallengeUseCase`を実装し、Level 1開始時の初期状態を構築する。
-- [ ] Level共通の左右移動シャッフル計画を、コイン保持手の開始位置をランダム化しつつ返す最小構成を追加する（全レベルで同一パターンを再利用し、複雑な動作の追加はPhase 2以降とする）。
-- [ ] シャッフルの尺（往復回数・合計時間）をレベルに応じて伸ばす計算を追加する（`confirming`の尺はレベルに関係なく固定値とする）。
+- [x] `StartChallengeUseCase`を実装し、Level 1開始時の初期状態を構築する。
+- [x] Level共通の左右移動シャッフル計画を、コイン保持手の開始位置をランダム化しつつ返す最小構成を追加する（全レベルで同一パターンを再利用し、複雑な動作の追加はPhase 2以降とする）。
+- [x] シャッフルの尺（往復回数・合計時間）をレベルに応じて伸ばす計算を追加する（`confirming`の尺はレベルに関係なく固定値とする）。
 - 対象ファイル：
   - `app/lib/features/game/application/use_cases/start_challenge_use_case.dart`
-  - `app/lib/features/game/domain/services/**`
-  - `app/lib/features/game/repositories/challenge_repository.dart`（必要な最小契約のみ）
+  - `app/lib/features/game/domain/services/level_shuffle_planner.dart`
+  - `app/lib/features/game/domain/entities/challenge_session.dart`
 - 検証：
   - `StartChallengeUseCase`のユニットテスト（開始位置のランダム化、レベルによるシャッフル尺の伸長を含む）
 - 完了条件：
@@ -169,5 +169,5 @@
 ## 実施記録
 
 | Commit | 内容                                                                                                                                                                                 | 検証結果                                                                                                              |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| 1      | `GamePhase`、`PerformerPosition`、`HandId`、`ShuffleStepType`を値オブジェクトとして、`ShuffleStep`、`ShufflePlan`、`AnswerResult`をエンティティとして追加。最小の`GameUiState`を追加 | `flutter test test/features/game`: 7 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | --- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 1      | `GamePhase`、`PerformerPosition`、`HandId`、`ShuffleStepType`を値オブジェクトとして、`ShuffleStep`、`ShufflePlan`、`AnswerResult`をエンティティとして追加。最小の`GameUiState`を追加 | `flutter test test/features/game`: 7 passed / `flutter analyze lib/features/game test/features/game`: No issues found |     | 2   | `LevelShufflePlanner`（Domain Service）、`ChallengeSession`（エンティティ）、`StartChallengeUseCase`を追加。Level1の左右移動パターンを全レベルで再利用し、開始保持手のランダム化とレベルによるシャッフル尺の伸長を実装。Phase1では永続化を行わないため`ChallengeRepository`は作成を見送り | `flutter test test/features/game`: 13 passed / `flutter analyze lib/features/game test/features/game`: No issues found |

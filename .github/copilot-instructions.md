@@ -1,41 +1,45 @@
-# Project Guidelines
+# プロジェクトガイドライン
 
-## Source of truth
+## 参照すべき文書
 
-Before planning or changing implementation, read the applicable project documents in `.github/docs/`:
+計画・実装を始める前に、`.github/docs/`内の該当文書を読むこと。
 
-- `vision.md` — product direction and non-negotiable experience principles
-- `gdd.md` — game rules and player-facing behavior
-- `tdd.md` — architecture, MVVM, dependency rules, and technical constraints
-- `roadmap.md` — phase order, task priorities, and completion criteria
-- `implementation-workflow.md` — mandatory planning and commit workflow
-- `decisions/` — accepted decisions from prior consultations
-- `implementation-plans/` — approved, phase-specific execution plans
+- `vision.md` — プロダクトの方向性と、譲れない体験原則
+- `gdd.md` — ゲームルールとプレイヤー向けの挙動
+- `tdd.md` — アーキテクチャ、MVVM、依存関係の方向、技術的制約
+- `roadmap.md` — Phaseの順序、タスクの優先度、完了条件
+- `implementation-workflow.md` — 計画とコミット運用の必須ワークフロー
+- `decisions/` — 過去の相談で確定した決定事項
+- `implementation-plans/` — 承認済みのPhase別実行計画
 
-When documents conflict, flag the conflict and ask before implementation.
+文書同士が矛盾する場合は、実装前に矛盾を指摘し、ユーザーへ確認すること。
 
-## Implementation workflow
+## 実装ワークフロー
 
-- Do not begin production implementation without a written implementation plan and explicit user approval.
-- Break each plan into one-commit units. For each unit, state scope, affected files, verification, and completion criteria.
-- Keep each commit focused, independently reviewable, and limited to one logical purpose.
-- Use Japanese free-form commit messages that describe the change clearly; Conventional Commits are not required.
-- Propose the Japanese commit message and provide the verified change summary, but never execute `git commit`; the user commits after review.
-- Update the relevant plan checklist only after its implementation and verification are complete.
-- Record decisions made through consultation in `docs/decisions/` before relying on them in subsequent work.
+- 書面化された実装計画とユーザーの明示的な承認がない状態で、本番コードの実装を開始しない。
+- 各計画を1コミット単位に分解する。各単位について、スコープ・対象ファイル・検証方法・完了条件を明示する。
+- 各コミットは1つの論理的目的に限定し、独立してレビュー可能な状態を保つ。
+- コミットメッセージは変更内容が分かる自由記述の日本語とする。Conventional Commitsは必須としない。
+- 日本語のコミットメッセージ案と検証済みの変更概要を提示するが、`git commit`は実行しない。ユーザーがレビュー後にコミットする。
+- 該当する計画のチェックリストは、実装と検証の両方が完了してから更新する。
+- 相談で確定した決定事項は、以後の作業で前提とする前に`docs/decisions/`へ記録する。
 
-## Architecture
+## アーキテクチャ
 
-Use Feature-first MVVM. Views call ViewModels; ViewModels call Use Cases; Use Cases coordinate Domain Services, Repositories, and Core Services. Keep the dependency direction defined in `docs/tdd.md`.
+Feature-first MVVMを採用する。ViewはViewModelを呼び、ViewModelはUseCaseを呼び、UseCaseはDomain Service・Repository・Core Serviceを調停する。`docs/tdd.md`で定義された依存方向を守ること。
 
-Do not put game rules in Views, ViewModels, Repositories, or Core Services. Keep game rules in `features/game/domain/`.
+ゲームルールをView、ViewModel、Repository、Core Serviceに置かない。ゲームルールは`features/game/domain/`に置くこと。
 
-## Coding conventions
+## コーディング規約
 
-- Add a short doc comment to every property/field in `entities`, `value_objects`, and similar model classes to explain its purpose (see `game_phase.dart` as the style reference). Do not add inline references to design-doc section numbers (e.g. `（TDD 5.2）`) in comments.
-- Write exception/error messages (e.g. `ArgumentError`) in Japanese.
-- For comment-only or formatting-only changes, do not re-run the full test suite; a quick diff review is sufficient.
+- `entities`、`value_objects`など、モデルクラスのプロパティ・フィールドには、その目的を説明する短いdocコメントを必ず付ける（スタイルの参考は`game_phase.dart`）。設計文書の章番号への言及（例: `（TDD 5.2）`）はコメントに含めない。
+- プロパティだけでなく、自明でないロジックの内部にも、意図を説明する短い1行コメントを付ける — 特にゲームデザイン上の判断（例: なぜ値をランダム化するのか、なぜ結果が決定的であってはいけないのか）について、次の行が「何をしているか」ではなく「なぜそうしているか」を書く。
+- 例外・エラーメッセージ（例: `ArgumentError`）は日本語で書く。
+- コメントのみ・書式のみの変更では、テストスイート全体を再実行しない。差分の確認で十分とする。
 
-## Validation
+## 検証
 
-Run the relevant formatter, static analysis, and tests for each implemented plan unit. Do not report a task complete if its planned verification has not run or has failed.
+- ロジックを変更する、または新規実装を追加するコミット単位では、必ず`flutter test`を実行する。コメントのみ・書式のみの変更では省略してよい（差分の確認で十分）。
+- すべてのコミット単位で`flutter analyze`を実行する。高速かつ読み取り専用で他ファイルへの副作用がないため、後回しにする理由がない。
+- コミットごとに`dart format`は実行しない — 無関係な既存ファイルまで書き換えてしまい、手動での差し戻しが必要になるため。ADR 0002に従い、`dart format .`はPhase完了時にまとめて1回実行する。
+- 計画済みの検証が未実行、または失敗している場合、そのタスクを完了として報告しない。
