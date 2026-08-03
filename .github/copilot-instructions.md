@@ -30,6 +30,12 @@ Use Feature-first MVVM. Views call ViewModels; ViewModels call Use Cases; Use Ca
 
 Do not put game rules in Views, ViewModels, Repositories, or Core Services. Keep game rules in `features/game/domain/`.
 
+## Coding conventions
+
+- Add a short doc comment to every property/field in `entities`, `value_objects`, and similar model classes to explain its purpose (see `game_phase.dart` as the style reference). Do not add inline references to design-doc section numbers (e.g. `（TDD 5.2）`) in comments.
+- Write exception/error messages (e.g. `ArgumentError`) in Japanese.
+- For comment-only or formatting-only changes, do not re-run the full test suite; a quick diff review is sufficient.
+
 ## Validation
 
 Run the relevant formatter, static analysis, and tests for each implemented plan unit. Do not report a task complete if its planned verification has not run or has failed.

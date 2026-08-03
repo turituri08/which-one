@@ -2,7 +2,7 @@
 
 | 項目        | 内容                                                                                |
 | ----------- | ----------------------------------------------------------------------------------- |
-| ステータス  | Draft                                                                               |
+| ステータス  | Approved / In progress                                                              |
 | 対象Roadmap | Phase 1（コア・プロトタイプ）                                                       |
 | 関連設計    | vision.md / gdd.md（3, 4, 6, 7） / tdd.md（3〜6） / decisions/0001 / decisions/0002 |
 
@@ -43,8 +43,8 @@
 
 ### Commit 1 — ドメイン基本モデルと状態定義の追加
 
-- [ ] `GamePhase`、`HandId`、`ShuffleStep`、`ShufflePlan`、`AnswerResult`を追加する。
-- [ ] `ShuffleStep`で保持手変更を許可する操作を`transfer`のみに限定する契約を明文化する。
+- [x] `GamePhase`、`HandId`、`ShuffleStep`、`ShufflePlan`、`AnswerResult`を追加する。
+- [x] `ShuffleStep`で保持手変更を許可する操作を`transfer`のみに限定する契約を明文化する。
 - 対象ファイル：
   - `app/lib/features/game/domain/entities/**`
   - `app/lib/features/game/domain/value_objects/**`
@@ -168,6 +168,6 @@
 
 ## 実施記録
 
-| Commit | 内容 | 検証結果 |
-| ------ | ---- | -------- |
-| -      | -    | -        |
+| Commit | 内容                                                                                                                                                                                 | 検証結果                                                                                                              |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| 1      | `GamePhase`、`PerformerPosition`、`HandId`、`ShuffleStepType`を値オブジェクトとして、`ShuffleStep`、`ShufflePlan`、`AnswerResult`をエンティティとして追加。最小の`GameUiState`を追加 | `flutter test test/features/game`: 7 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
