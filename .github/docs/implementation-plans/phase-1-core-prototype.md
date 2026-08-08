@@ -71,12 +71,11 @@
 
 ### Commit 3 — 回答判定UseCaseの実装
 
-- [ ] `SubmitAnswerUseCase`を実装し、正解/不正解/時間切れの判定結果を返す。
-- [ ] 正解時の次レベル進行に必要な最小情報（現レベル、最高到達レベル）を更新する。
+- [x] `SubmitAnswerUseCase`を実装し、正解/不正解/時間切れの判定結果を返す。
+- [x] 正解時の次レベル進行に必要な最小情報（現レベル、最高到達レベル）を更新する。
 - 対象ファイル：
   - `app/lib/features/game/application/use_cases/submit_answer_use_case.dart`
-  - `app/lib/features/game/domain/services/**`
-  - `app/lib/features/game/domain/entities/**`
+  - `app/lib/features/game/domain/services/answer_judge.dart`
 - 検証：
   - `SubmitAnswerUseCase`のユニットテスト（正解・不正解・時間切れ）
 - 完了条件：
@@ -168,6 +167,8 @@
 
 ## 実施記録
 
-| Commit | 内容                                                                                                                                                                                 | 検証結果                                                                                                              |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | --- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| 1      | `GamePhase`、`PerformerPosition`、`HandId`、`ShuffleStepType`を値オブジェクトとして、`ShuffleStep`、`ShufflePlan`、`AnswerResult`をエンティティとして追加。最小の`GameUiState`を追加 | `flutter test test/features/game`: 7 passed / `flutter analyze lib/features/game test/features/game`: No issues found |     | 2   | `LevelShufflePlanner`（Domain Service）、`ChallengeSession`（エンティティ）、`StartChallengeUseCase`を追加。Level1の左右移動パターンを全レベルで再利用し、開始保持手のランダム化とレベルによるシャッフル尺の伸長を実装。Phase1では永続化を行わないため`ChallengeRepository`は作成を見送り | `flutter test test/features/game`: 13 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
+| Commit | 内容                                                                                                                                                                                                                                                                                      | 検証結果                                                                                                               |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 1      | `GamePhase`、`PerformerPosition`、`HandId`、`ShuffleStepType`を値オブジェクトとして、`ShuffleStep`、`ShufflePlan`、`AnswerResult`をエンティティとして追加。最小の`GameUiState`を追加                                                                                                      | `flutter test test/features/game`: 7 passed / `flutter analyze lib/features/game test/features/game`: No issues found  |
+| 2      | `LevelShufflePlanner`（Domain Service）、`ChallengeSession`（エンティティ）、`StartChallengeUseCase`を追加。Level1の左右移動パターンを全レベルで再利用し、開始保持手のランダム化とレベルによるシャッフル尺の伸長を実装。Phase1では永続化を行わないため`ChallengeRepository`は作成を見送り | `flutter test test/features/game`: 13 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
+| 3      | `AnswerJudge`（Domain Service）で正解判定ロジックを切り出し、`SubmitAnswerUseCase`で判定結果と次レベル進行（現レベル・最高到達レベルの更新）を実装。不正解・時間切れはレベルを進めず`incorrect`へ遷移                                                                                     | `flutter test test/features/game`: 19 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
