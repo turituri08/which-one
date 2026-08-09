@@ -1,8 +1,14 @@
 import 'dart:math';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../domain/entities/challenge_session.dart';
 import '../../domain/services/level_shuffle_planner.dart';
 import '../../domain/value_objects/game_phase.dart';
+
+/// `StartChallengeUseCase`をViewModelへ注入するためのProvider。
+final Provider<StartChallengeUseCase> startChallengeUseCaseProvider =
+    Provider<StartChallengeUseCase>((ref) => StartChallengeUseCase());
 
 /// Level 1からのチャレンジ開始を行うユースケース。
 class StartChallengeUseCase {

@@ -1,11 +1,18 @@
 import 'dart:math';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../domain/entities/answer_result.dart';
 import '../../domain/entities/challenge_session.dart';
 import '../../domain/services/answer_judge.dart';
 import '../../domain/services/level_shuffle_planner.dart';
 import '../../domain/value_objects/game_phase.dart';
 import '../../domain/value_objects/hand_id.dart';
+
+/// `SubmitAnswerUseCase`をViewModelへ注入するためのProvider。
+final Provider<SubmitAnswerUseCase> submitAnswerUseCaseProvider = Provider<SubmitAnswerUseCase>(
+  (ref) => SubmitAnswerUseCase(),
+);
 
 /// プレイヤーの回答（または時間切れ）を判定し、チャレンジ状態を更新するユースケース。
 class SubmitAnswerUseCase {

@@ -83,11 +83,11 @@
 
 ### Commit 4 — GameViewModelの状態機械実装
 
-- [ ] `GameViewModel`を追加し、開始・シャッフル完了・回答・正誤反映・結果遷移を管理する。
-- [ ] `StartChallengeUseCase`と`SubmitAnswerUseCase`をViewModelへ接続する。
-- [ ] `confirming`はコイン提示後の固定の内部待機（カウントダウン表示なし）で自動的に`shuffling`へ進める。
-- [ ] `shuffling`は`ShufflePlan.steps`の尺を消化した時点で自動的に`answering`へ進める（回答フェーズ以外はプレイヤー向けタイマーを持たない）。
-- [ ] `correct`は次レベルの`confirming`へ自動で戻り、`incorrect`は`result`へ自動で進む。
+- [x] `GameViewModel`を追加し、開始・シャッフル完了・回答・正誤反映・結果遷移を管理する。
+- [x] `StartChallengeUseCase`と`SubmitAnswerUseCase`をViewModelへ接続する。
+- [x] `confirming`はコイン提示後の固定の内部待機（カウントダウン表示なし）で自動的に`shuffling`へ進める。
+- [x] `shuffling`は`ShufflePlan.steps`の尺を消化した時点で自動的に`answering`へ進める（回答フェーズ以外はプレイヤー向けタイマーを持たない）。
+- [x] `correct`は次レベルの`confirming`へ自動で戻り、`incorrect`は`result`へ自動で進む。
 - 対象ファイル：
   - `app/lib/features/game/presentation/view_models/game_view_model.dart`
   - `app/lib/features/game/presentation/view_models/game_ui_state.dart`
@@ -172,3 +172,4 @@
 | 1      | `GamePhase`、`PerformerPosition`、`HandId`、`ShuffleStepType`を値オブジェクトとして、`ShuffleStep`、`ShufflePlan`、`AnswerResult`をエンティティとして追加。最小の`GameUiState`を追加                                                                                                      | `flutter test test/features/game`: 7 passed / `flutter analyze lib/features/game test/features/game`: No issues found  |
 | 2      | `LevelShufflePlanner`（Domain Service）、`ChallengeSession`（エンティティ）、`StartChallengeUseCase`を追加。Level1の左右移動パターンを全レベルで再利用し、開始保持手のランダム化とレベルによるシャッフル尺の伸長を実装。Phase1では永続化を行わないため`ChallengeRepository`は作成を見送り | `flutter test test/features/game`: 13 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
 | 3      | `AnswerJudge`（Domain Service）で正解判定ロジックを切り出し、`SubmitAnswerUseCase`で判定結果と次レベル進行（現レベル・最高到達レベルの更新）を実装。不正解・時間切れはレベルを進めず`incorrect`へ遷移                                                                                     | `flutter test test/features/game`: 19 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
+| 4      | `GameViewModel`（Riverpodの`Notifier`）を追加し、`GameUiState`へ`level`/`highestLevel`/`plan`/`lastAnswerResult`を拡張。`confirming`/`shuffling`/`correct`/`incorrect`の自動遷移を、実時間非依存でテストできる`GameScheduler`差し替え機構で実装                                           | `flutter test test/features/game`: 25 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
