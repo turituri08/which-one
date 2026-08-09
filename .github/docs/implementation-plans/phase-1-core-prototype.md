@@ -100,9 +100,9 @@
 
 ### Commit 5 — Game画面の簡易描画と直接タップ回答
 
-- [ ] `CustomPainter`で2手（または2円）を描画する。
-- [ ] 回答フェーズで対象を直接タップして回答できるようにする。
-- [ ] 回答確定後は再入力を無効化する。
+- [x] `CustomPainter`で2手（または2円）を描画する。
+- [x] 回答フェーズで対象を直接タップして回答できるようにする。
+- [x] 回答確定後は再入力を無効化する。
 - 対象ファイル：
   - `app/lib/features/game/presentation/game_screen.dart`
   - `app/lib/features/game/presentation/painters/**`
@@ -173,3 +173,4 @@
 | 2      | `LevelShufflePlanner`（Domain Service）、`ChallengeSession`（エンティティ）、`StartChallengeUseCase`を追加。Level1の左右移動パターンを全レベルで再利用し、開始保持手のランダム化とレベルによるシャッフル尺の伸長を実装。Phase1では永続化を行わないため`ChallengeRepository`は作成を見送り | `flutter test test/features/game`: 13 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
 | 3      | `AnswerJudge`（Domain Service）で正解判定ロジックを切り出し、`SubmitAnswerUseCase`で判定結果と次レベル進行（現レベル・最高到達レベルの更新）を実装。不正解・時間切れはレベルを進めず`incorrect`へ遷移                                                                                     | `flutter test test/features/game`: 19 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
 | 4      | `GameViewModel`（Riverpodの`Notifier`）を追加し、`GameUiState`へ`level`/`highestLevel`/`plan`/`lastAnswerResult`を拡張。`confirming`/`shuffling`/`correct`/`incorrect`の自動遷移を、実時間非依存でテストできる`GameScheduler`差し替え機構で実装                                           | `flutter test test/features/game`: 25 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
+| 5      | `HandsPainter`（`CustomPainter`）と`HandsView`を追加し、`GameScreen`から2手の円を描画。`answering`フェーズのみ手そのものへの直接タップで`submitAnswer`を呼び、それ以外のフェーズはタップを受け付けない。UseCase/ SchedulerをRiverpod Providerからの`ref.watch`注入へ変更し、Widget/Mock双方でテスト可能にした                | `flutter test`: 27 passed / `flutter analyze lib/features/game lib/core/constants test/widget_test.dart test/features/game`: No issues found |
