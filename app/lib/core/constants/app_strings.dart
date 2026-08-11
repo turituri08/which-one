@@ -7,4 +7,5 @@ class AppStrings {
   static const String gameTitle = 'ゲーム';
   static const String backToTitle = 'タイトルへ戻る';
   static const String levelLabel = 'LEVEL';
+  static const String remainingSecondsLabel = '残り';
 }

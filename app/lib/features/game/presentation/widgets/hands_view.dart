@@ -16,7 +16,7 @@ class HandsView extends StatelessWidget {
   final GameUiState state;
   final ValueChanged<HandId> onHandTap;
 
-  /// 誤タップ防止のため、見た目の円より広いタップ領域を確保する（TDD 6.1）。
+  /// 誤タップ防止のため、見た目の円より広いタップ領域を確保する。
   static const double _tapAreaSize = 56;
 
   @override

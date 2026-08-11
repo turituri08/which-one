@@ -65,4 +65,28 @@ void main() {
 
     expect(countingUseCase.callCount, 1);
   });
+
+  testWidgets('answeringフェーズで残り時間表示が1秒ごとに更新される', (WidgetTester tester) async {
+    final _FakeScheduler scheduler = _FakeScheduler();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [gameSchedulerProvider.overrideWithValue(scheduler.call)],
+        child: const MaterialApp(home: GameScreen()),
+      ),
+    );
+    await tester.pump();
+
+    scheduler.runNext(); // confirming -> shuffling
+    await tester.pump();
+    scheduler.runNext(); // shuffling -> answering
+    await tester.pump();
+
+    expect(find.text('残り 30'), findsOneWidget);
+
+    scheduler.runNext(); // 1ティック経過
+    await tester.pump();
+
+    expect(find.text('残り 29'), findsOneWidget);
+  });
 }

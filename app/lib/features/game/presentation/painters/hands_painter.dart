@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// 手を円のプレースホルダーとして描画するPainter。
 ///
-/// Phase 1では演者1人・手2本の固定位置のみを扱う（TDD 6.1）。
+/// Phase 1では演者1人・手2本の固定位置のみを扱う。
 class HandsPainter extends CustomPainter {
   const HandsPainter({required this.coinHolderHandIndex});
 
@@ -36,7 +36,7 @@ class HandsPainter extends CustomPainter {
       canvas.drawCircle(center, radius, strokePaint);
 
       if (coinHolderHandIndex == handIndex) {
-        // コイン確認フェーズでのみ保持手を明示する（GDD 4.2）。
+        // コイン確認フェーズでのみ保持手を明示する。
         canvas.drawCircle(center, radius * 0.3, Paint()..color = Colors.black87);
       }
     }

@@ -41,6 +41,11 @@ class GameViewModel extends Notifier<GameUiState> {
   static const Duration _correctDuration = Duration(milliseconds: 800);
   static const Duration _incorrectDuration = Duration(seconds: 2);
 
+  // 回答タイマー。初期リリースは全レベル固定30秒とする。
+  static const Duration _answeringDuration = Duration(seconds: 30);
+  // 残り時間表示を1秒刻みで更新するための間隔。
+  static const Duration _answeringTickInterval = Duration(seconds: 1);
+
   ChallengeSession? _session;
 
   @override
@@ -82,7 +87,36 @@ class GameViewModel extends Notifier<GameUiState> {
       if (state.phase != GamePhase.shuffling) {
         return;
       }
-      state = state.copyWith(phase: GamePhase.answering);
+      state = state.copyWith(
+        phase: GamePhase.answering,
+        remainingSeconds: _answeringDuration.inSeconds,
+      );
+      _scheduleAnsweringTick(_answeringDuration.inSeconds);
+    });
+  }
+
+  /// 回答フェーズの残り時間を1秒ごとに減算し、UIへ公開する。
+  ///
+  /// `Timer.periodic`のような繰り返しタイマーは使わず、1回だけ発火する
+  /// `_scheduler`呼び出しをこのメソッド自身が再帰的に呼び直すことで、
+  /// 「1秒ごとに発火し続ける」動きを実現している。ガードで`return`した
+  /// 分岐（フェーズがanswering以外／残り0秒）では再帰しないため、
+  /// そこで連鎖が止まる。
+  void _scheduleAnsweringTick(int secondsRemainingAtSchedule) {
+    _scheduler(_answeringTickInterval, () {
+      if (state.phase != GamePhase.answering) {
+        return;
+      }
+      final int next = secondsRemainingAtSchedule - 1;
+      if (next <= 0) {
+        state = state.copyWith(remainingSeconds: 0);
+        // 時間切れはnullの回答としてsubmitAnswerへ委譲し、判定経路を1本化する。
+        submitAnswer(null);
+        return;
+      }
+      state = state.copyWith(remainingSeconds: next);
+      // まだanswering中なら、次の1秒後ティックを新たに1つ予約する（自己再帰）。
+      _scheduleAnsweringTick(next);
     });
   }
 

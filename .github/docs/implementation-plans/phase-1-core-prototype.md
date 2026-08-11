@@ -114,9 +114,9 @@
 
 ### Commit 6 — 回答タイマーと競合防止
 
-- [ ] 全レベル30秒の回答タイマーを実装する。
-- [ ] 残り時間表示を追加する。
-- [ ] 時間切れとタップの同時発火時に最初の結果だけを受理する。
+- [x] 全レベル30秒の回答タイマーを実装する。
+- [x] 残り時間表示を追加する。
+- [x] 時間切れとタップの同時発火時に最初の結果だけを受理する。
 - 対象ファイル：
   - `app/lib/features/game/presentation/view_models/game_view_model.dart`
   - `app/lib/features/game/presentation/view_models/game_ui_state.dart`
@@ -174,3 +174,4 @@
 | 3      | `AnswerJudge`（Domain Service）で正解判定ロジックを切り出し、`SubmitAnswerUseCase`で判定結果と次レベル進行（現レベル・最高到達レベルの更新）を実装。不正解・時間切れはレベルを進めず`incorrect`へ遷移                                                                                     | `flutter test test/features/game`: 19 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
 | 4      | `GameViewModel`（Riverpodの`Notifier`）を追加し、`GameUiState`へ`level`/`highestLevel`/`plan`/`lastAnswerResult`を拡張。`confirming`/`shuffling`/`correct`/`incorrect`の自動遷移を、実時間非依存でテストできる`GameScheduler`差し替え機構で実装                                           | `flutter test test/features/game`: 25 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
 | 5      | `HandsPainter`（`CustomPainter`）と`HandsView`を追加し、`GameScreen`から2手の円を描画。`answering`フェーズのみ手そのものへの直接タップで`submitAnswer`を呼び、それ以外のフェーズはタップを受け付けない。UseCase/ SchedulerをRiverpod Providerからの`ref.watch`注入へ変更し、Widget/Mock双方でテスト可能にした                | `flutter test`: 27 passed / `flutter analyze lib/features/game lib/core/constants test/widget_test.dart test/features/game`: No issues found |
+| 6      | `GameUiState`に`remainingSeconds`を追加し、`GameViewModel`に全レベル固定30秒の回答タイマーを実装（既存の`GameScheduler`抽象を使い、1秒ごとに自身を再予約する自己再帰で残り時間を減算）。残り0秒到達時は`submitAnswer(null)`へ委譲し、時間切れ判定の経路を1本化。競合防止は既存の`submitAnswer`の「answering以外は無視する」ガードを流用し、タップ・時間切れのどちらが先に成立しても後発側は無視される。`GameScreen`に`answering`中のみ残り時間表示を追加            | `flutter test`: 33 passed / `flutter analyze lib/features/game lib/core/constants test/widget_test.dart test/features/game`: No issues found |

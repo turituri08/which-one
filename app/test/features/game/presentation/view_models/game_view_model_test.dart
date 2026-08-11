@@ -69,6 +69,9 @@ void main() {
       expect(afterAnswer.highestLevel, 1);
       expect(afterAnswer.lastAnswerResult!.isCorrect, isTrue);
 
+      // 回答提出前に予約されていた回答タイマーのティックが残っているため、
+      // 先にそれを無害に消化してから、correct -> confirmingの遷移を実行する。
+      scheduler.runNext();
       scheduler.runNext();
       expect(container.read(gameViewModelProvider).phase, GamePhase.confirming);
     });
@@ -87,6 +90,9 @@ void main() {
 
       expect(container.read(gameViewModelProvider).phase, GamePhase.incorrect);
 
+      // 回答提出前に予約されていた回答タイマーのティックが残っているため、
+      // 先にそれを無害に消化してから、incorrect -> resultの遷移を実行する。
+      scheduler.runNext();
       scheduler.runNext();
       expect(container.read(gameViewModelProvider).phase, GamePhase.result);
     });
@@ -109,6 +115,78 @@ void main() {
       viewModel().submitAnswer(null);
 
       expect(container.read(gameViewModelProvider).phase, GamePhase.confirming);
+    });
+
+    test('answeringへ遷移すると残り時間が30秒になる', () {
+      viewModel().startChallenge();
+      scheduler.runNext(); // confirming -> shuffling
+      scheduler.runNext(); // shuffling -> answering
+
+      expect(container.read(gameViewModelProvider).remainingSeconds, 30);
+    });
+
+    test('残り時間は回答フェーズ中、1秒ごとに更新される', () {
+      viewModel().startChallenge();
+      scheduler.runNext(); // confirming -> shuffling
+      scheduler.runNext(); // shuffling -> answering
+
+      scheduler.runNext(); // 1ティック経過
+      expect(container.read(gameViewModelProvider).remainingSeconds, 29);
+
+      scheduler.runNext(); // 2ティック経過
+      expect(container.read(gameViewModelProvider).remainingSeconds, 28);
+    });
+
+    test('残り時間が尽きると自動的に時間切れとして判定される', () {
+      viewModel().startChallenge();
+      scheduler.runNext(); // confirming -> shuffling
+      scheduler.runNext(); // shuffling -> answering
+
+      for (int i = 0; i < 30; i++) {
+        scheduler.runNext();
+      }
+
+      final state = container.read(gameViewModelProvider);
+      expect(state.phase, GamePhase.incorrect);
+      expect(state.lastAnswerResult!.isTimedOut, isTrue);
+      expect(state.remainingSeconds, 0);
+    });
+
+    test('時間切れ確定後にタップが届いても無視される（競合防止）', () {
+      viewModel().startChallenge();
+      scheduler.runNext(); // confirming -> shuffling
+      scheduler.runNext(); // shuffling -> answering
+
+      final HandId correctHand = container.read(gameViewModelProvider).plan!.finalHolder;
+      for (int i = 0; i < 30; i++) {
+        scheduler.runNext();
+      }
+
+      // 時間切れで既にincorrectへ遷移した後の遅延タップは、二重の結果遷移を起こしてはならない。
+      viewModel().submitAnswer(correctHand);
+
+      final state = container.read(gameViewModelProvider);
+      expect(state.phase, GamePhase.incorrect);
+      expect(state.lastAnswerResult!.isTimedOut, isTrue);
+    });
+
+    test('タップで回答確定後に残っていた時間切れティックは無視される（競合防止）', () {
+      viewModel().startChallenge();
+      scheduler.runNext(); // confirming -> shuffling
+      scheduler.runNext(); // shuffling -> answering
+
+      final HandId correctHand = container.read(gameViewModelProvider).plan!.finalHolder;
+      viewModel().submitAnswer(correctHand);
+
+      final afterTap = container.read(gameViewModelProvider);
+      expect(afterTap.phase, GamePhase.correct);
+
+      // 回答確定前に予約されていた時間切れティックが後から発火しても、状態は変化しない。
+      scheduler.runNext();
+
+      final state = container.read(gameViewModelProvider);
+      expect(state.phase, GamePhase.correct);
+      expect(state.lastAnswerResult!.isCorrect, isTrue);
     });
   });
 }

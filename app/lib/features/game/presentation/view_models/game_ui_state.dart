@@ -12,6 +12,7 @@ class GameUiState {
     this.highestLevel = 0,
     this.plan,
     this.lastAnswerResult,
+    this.remainingSeconds = 0,
   });
 
   /// 現在のゲーム進行フェーズ。
@@ -29,12 +30,16 @@ class GameUiState {
   /// 直近の回答判定結果。まだ一度も回答していない場合は`null`。
   final AnswerResult? lastAnswerResult;
 
+  /// 回答タイマーの残り秒数。`answering`以外では意味を持たない。
+  final int remainingSeconds;
+
   GameUiState copyWith({
     GamePhase? phase,
     int? level,
     int? highestLevel,
     ShufflePlan? plan,
     AnswerResult? lastAnswerResult,
+    int? remainingSeconds,
   }) {
     return GameUiState(
       phase: phase ?? this.phase,
@@ -42,6 +47,7 @@ class GameUiState {
       highestLevel: highestLevel ?? this.highestLevel,
       plan: plan ?? this.plan,
       lastAnswerResult: lastAnswerResult ?? this.lastAnswerResult,
+      remainingSeconds: remainingSeconds ?? this.remainingSeconds,
     );
   }
 
@@ -52,8 +58,10 @@ class GameUiState {
       other.level == level &&
       other.highestLevel == highestLevel &&
       other.plan == plan &&
-      other.lastAnswerResult == lastAnswerResult;
+      other.lastAnswerResult == lastAnswerResult &&
+      other.remainingSeconds == remainingSeconds;
 
   @override
-  int get hashCode => Object.hash(phase, level, highestLevel, plan, lastAnswerResult);
+  int get hashCode =>
+      Object.hash(phase, level, highestLevel, plan, lastAnswerResult, remainingSeconds);
 }
