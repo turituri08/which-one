@@ -12,14 +12,14 @@
 
 ## 対象範囲
 
-- `GamePhase`を中心にした状態機械（`idle`、`confirming`、`shuffling`、`answering`、`correct`、`incorrect`、`result`、`paused`）
+- `GamePhase`を中心にした状態機械（`idle`、`confirming`、`shuffling`、`answering`、`correct`、`incorrect`、`result`）
 - `StartChallengeUseCase`と`SubmitAnswerUseCase`の実装
 - `HandId`、`ShufflePlan`、`ShuffleStep`、`AnswerResult`の実装
 - `CustomPainter`による2手（または2円）描画と直接タップ回答
 - Level 1の左右移動シャッフル
 - 全レベル30秒の回答タイマー、残り時間表示
 - 二重入力と時間切れ競合の防止
-- バックグラウンド移行時の進行・タイマー一時停止/復帰
+- アプリの非アクティブ化時にタイマーを一時停止しないことの確認（[ADR 0004](../decisions/0004-no-pause-on-inactive.md)）
 - 保持手一意性のユニットテスト
 
 ## 対象外
@@ -127,18 +127,33 @@
 - 完了条件：
   - 二重結果遷移が発生せず、残り時間表示が回答フェーズで更新される。
 
-### Commit 7 — バックグラウンド一時停止・復帰
+### Commit 7 — バックグラウンド移行時にタイマーを止めない方針の確定
 
-- [ ] ライフサイクル変化を検知し、`paused`へ遷移して進行とタイマーを停止する。
-- [ ] 復帰時に中断前フェーズへ戻し、残り時間を継続する。
+当初は`tdd.md`の記述通り、非アクティブ化時に`paused`へ遷移してタイマーを一時停止し、復帰後に再開する実装（`pause`/`resume`、`GamePhase.paused`）を行ったが、実装検討の過程で次の2つの抜け道が見つかったため方針を転換した（詳細は[ADR 0004](../decisions/0004-no-pause-on-inactive.md)、旧方針は[ADR 0003](../decisions/0003-pause-resume-precision.md)としてSupersededで記録）。
+
+- shuffling中にアプリを切り替えて戻ると、同じシャッフルが最初から再生され、何度でも見返せてしまう。
+- answering中にアプリをバックグラウンドへ置くと回答タイマーが凍結され、実質無制限に考える時間を確保できてしまう。
+
+「意図的な操作」と「意図しない中断（着信等）」をFlutterのライフサイクルAPIから区別する信頼できる手段がないため、理由を問わずタイマーは常に進み続ける方針とした。
+
+- [x] 一時停止・復帰の実装（`pause`/`resume`、`GamePhase.paused`、`WidgetsBindingObserver`配線）を撤回し、Commit 6時点の実装に戻す。
+- [x] `tdd.md`の状態遷移図・ライフサイクル表・テスト戦略から`paused`関連の記述を削除し、非アクティブ化時もタイマーを止めない方針を明記する。
+- [x] 方針転換の経緯と理由をADR化する。
 - 対象ファイル：
   - `app/lib/features/game/presentation/game_screen.dart`
   - `app/lib/features/game/presentation/view_models/game_view_model.dart`
+  - `app/lib/features/game/domain/value_objects/game_phase.dart`
+  - `app/test/features/game/presentation/view_models/game_view_model_test.dart`
+  - `.github/docs/tdd.md`
+  - `.github/docs/roadmap.md`
+  - `.github/docs/decisions/0003-pause-resume-precision.md`（Superseded化）
+  - `.github/docs/decisions/0004-no-pause-on-inactive.md`（新規）
 - 検証：
-  - ViewModelテスト（`paused`遷移と復帰）
-  - 必要に応じて手動確認（エミュレータでバックグラウンド復帰）
+  - `flutter test`（Commit 6時点の状態へ戻したことを確認）
+  - `flutter analyze`
 - 完了条件：
-  - 復帰後に状態機械とタイマーが破綻しない。
+  - `GamePhase.paused`・`pause`/`resume`関連コードが存在せず、非アクティブ化時にタイマーへ一切干渉しないこと。
+  - 文書（`tdd.md`/`roadmap.md`/ADR）が新方針と一致していること。
 
 ### Commit 8 — 保持手一意性テストとPhase 1完了ゲート
 
@@ -161,7 +176,7 @@
 
 - `ChallengeSession`やRepository責務をPhase 1でどこまで導入するか（最小実装か、Phase 2前提の拡張余地を先に作るか）。
 - タイマー実装方式（`Timer`主体かTicker主体か）によるテスト容易性の差。
-- `paused`復帰時の時間補正（厳密経過時間を反映するか、停止時の残り時間をそのまま再開するか）。
+- **アプリ非アクティブ化時のタイマー扱い（相談で確認済み・[ADR 0004](../decisions/0004-no-pause-on-inactive.md)）**：一時停止はせず、`confirming`/`shuffling`/`answering`いずれのタイマーも実時間で進行し続ける。理由を問わず離れた分だけ不利になる（旧方針の`paused`遷移・残り時間の凍結はADR 0003としてSupersededに変更）。
 - Level 2以降をPhase 1でどこまで仮実装するか（固定パターンのみ / 生成の前段まで）。
 - **数値パラメータ（相談で確認済み）**：`confirming`の固定秒数、`shuffling`のレベルごとの伸長式（初期値・増分）は本Phaseでは確定しない。実装時は暫定値を置いて仮実装を進め、Roadmap 10章の方針に従い後続フェーズのプレイテストで正式に調整する。
 
@@ -175,3 +190,4 @@
 | 4      | `GameViewModel`（Riverpodの`Notifier`）を追加し、`GameUiState`へ`level`/`highestLevel`/`plan`/`lastAnswerResult`を拡張。`confirming`/`shuffling`/`correct`/`incorrect`の自動遷移を、実時間非依存でテストできる`GameScheduler`差し替え機構で実装                                           | `flutter test test/features/game`: 25 passed / `flutter analyze lib/features/game test/features/game`: No issues found |
 | 5      | `HandsPainter`（`CustomPainter`）と`HandsView`を追加し、`GameScreen`から2手の円を描画。`answering`フェーズのみ手そのものへの直接タップで`submitAnswer`を呼び、それ以外のフェーズはタップを受け付けない。UseCase/ SchedulerをRiverpod Providerからの`ref.watch`注入へ変更し、Widget/Mock双方でテスト可能にした                | `flutter test`: 27 passed / `flutter analyze lib/features/game lib/core/constants test/widget_test.dart test/features/game`: No issues found |
 | 6      | `GameUiState`に`remainingSeconds`を追加し、`GameViewModel`に全レベル固定30秒の回答タイマーを実装（既存の`GameScheduler`抽象を使い、1秒ごとに自身を再予約する自己再帰で残り時間を減算）。残り0秒到達時は`submitAnswer(null)`へ委譲し、時間切れ判定の経路を1本化。競合防止は既存の`submitAnswer`の「answering以外は無視する」ガードを流用し、タップ・時間切れのどちらが先に成立しても後発側は無視される。`GameScreen`に`answering`中のみ残り時間表示を追加            | `flutter test`: 33 passed / `flutter analyze lib/features/game lib/core/constants test/widget_test.dart test/features/game`: No issues found |
+| 7      | 当初`GameScreen`に`WidgetsBindingObserver`を追加し、非アクティブ化時に`GameViewModel.pause()`/`resume()`で`paused`へ一時停止・復帰する実装を行ったが（ADR 0003）、shuffling再視聴・answering思考時間無制限の2つの抜け道が判明したため撤回。Commit 6時点の実装へ戻し、`GamePhase`から`paused`を削除。非アクティブ化時もタイマーを一切止めない方針をADR 0004として記録し、`tdd.md`/`roadmap.md`の該当記述を更新 | `flutter test`: 33 passed / `flutter analyze lib/features/game lib/core/constants test/widget_test.dart test/features/game`: No issues found |

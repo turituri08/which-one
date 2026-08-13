@@ -31,6 +31,10 @@ final NotifierProvider<GameViewModel, GameUiState> gameViewModelProvider =
 ///
 /// `confirming`/`shuffling`/`correct`/`incorrect`は入力を受け付けず、
 /// 固定時間またはシャッフル尺の経過で自動的に次フェーズへ進む。
+///
+/// アプリが非アクティブになっても、ここで動くタイマーは一切止めない（ADR 0004）。
+/// そのため`GameScreen`側もアプリライフサイクルを監視せず、`_scheduler`は常に
+/// 実時間ベースで進行し続ける。
 class GameViewModel extends Notifier<GameUiState> {
   late final StartChallengeUseCase _startChallengeUseCase;
   late final SubmitAnswerUseCase _submitAnswerUseCase;
