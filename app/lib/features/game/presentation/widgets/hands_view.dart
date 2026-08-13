@@ -32,7 +32,10 @@ class HandsView extends StatelessWidget {
         final Size size = constraints.biggest;
         return Stack(
           children: <Widget>[
-            CustomPaint(size: size, painter: HandsPainter(coinHolderHandIndex: coinHolderHandIndex)),
+            CustomPaint(
+              size: size,
+              painter: HandsPainter(coinHolderHandIndex: coinHolderHandIndex),
+            ),
             for (final int handIndex in <int>[0, 1]) _buildTapTarget(size, handIndex, canAnswer),
           ],
         );

@@ -5,13 +5,13 @@ import 'package:app/app/app.dart';
 import 'package:app/features/game/presentation/view_models/game_view_model.dart';
 
 void main() {
-  testWidgets('title screen navigates to game and back', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('title screen navigates to game and back', (WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
         // 実タイマーを進めず、確認フェーズの表示だけを検証する。
-        overrides: [gameSchedulerProvider.overrideWithValue((Duration duration, void Function() callback) {})],
+        overrides: [
+          gameSchedulerProvider.overrideWithValue((Duration duration, void Function() callback) {}),
+        ],
         child: const WhichOneApp(),
       ),
     );

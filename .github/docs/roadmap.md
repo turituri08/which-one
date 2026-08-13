@@ -69,17 +69,17 @@
 
 ### タスク
 
-- [ ] **P0** `GamePhase`を使った状態機械を実装する。
+- [x] **P0** `GamePhase`を使った状態機械を実装する。
   - `idle`、`confirming`、`shuffling`、`answering`、`correct`、`incorrect`、`result`
-- [ ] **P0** `GameViewModel`から`StartChallengeUseCase`と`SubmitAnswerUseCase`を呼び出す。
-- [ ] **P0** `HandId`、`ShufflePlan`、`ShuffleStep`、`AnswerResult`を実装する。
-- [ ] **P0** `CustomPainter`で2つの手または円を描画し、直接タップで回答できるようにする。
-- [ ] **P0** Level 1の左右移動シャッフルを実装する。
-- [ ] **P0** コイン位置の確認、シャッフル、回答、正解／不正解、次レベル／結果の遷移を実装する。
-- [ ] **P1** 全Level 30秒の回答タイマーと残り時間表示を実装する。
-- [ ] **P1** タップと時間切れの競合を防ぎ、最初の結果だけを受理する。
-- [ ] **P1** アプリの非アクティブ化時もタイマーを一時停止せず進め続け、離れた分だけ不利になるようにする（ADR 0004）。
-- [ ] **P1** `ShufflePlan`の保持手が常に1本であることをユニットテストする。
+- [x] **P0** `GameViewModel`から`StartChallengeUseCase`と`SubmitAnswerUseCase`を呼び出す。
+- [x] **P0** `HandId`、`ShufflePlan`、`ShuffleStep`、`AnswerResult`を実装する。
+- [x] **P0** `CustomPainter`で2つの手または円を描画し、直接タップで回答できるようにする。
+- [x] **P0** Level 1の左右移動シャッフルを実装する。
+- [x] **P0** コイン位置の確認、シャッフル、回答、正解／不正解、次レベル／結果の遷移を実装する。
+- [x] **P1** 全Level 30秒の回答タイマーと残り時間表示を実装する。
+- [x] **P1** タップと時間切れの競合を防ぎ、最初の結果だけを受理する。
+- [x] **P1** アプリの非アクティブ化時もタイマーを一時停止せず進め続け、離れた分だけ不利になるようにする（ADR 0004）。
+- [x] **P1** `ShufflePlan`の保持手が常に1本であることをユニットテストする。
 
 ### 完了条件
 
