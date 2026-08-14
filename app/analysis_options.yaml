@@ -9,6 +9,12 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+# dart format / エディタ保存時フォーマッタの両方が同じ1行あたりの最大文字数を
+# 使うようにする。VSCode等の個人設定（dart.lineLength）に依存せず、
+# `dart format .`をどの環境から実行しても同じ結果になることを保証する。
+formatter:
+  page_width: 100
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
