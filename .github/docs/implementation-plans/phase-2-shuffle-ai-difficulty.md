@@ -55,8 +55,8 @@
 
 ### Commit 2 — ShuffleGeneratorへの置き換え（挙動変更なし）
 
-- [ ] `LevelShufflePlanner`を`ShuffleGenerator`に置き換える。Level 1〜3の生成は`DifficultyResolver`の出力を使うよう変更するが、生成される計画の性質（左右移動・シャッフル尺の伸長）はPhase 1完了時点の挙動を維持する。
-- [ ] `StartChallengeUseCase`、`SubmitAnswerUseCase`の呼び出し先を`ShuffleGenerator`へ更新する。
+- [x] `LevelShufflePlanner`を`ShuffleGenerator`に置き換える。Level 1〜3の生成は`DifficultyResolver`の出力を使うよう変更するが、生成される計画の性質（左右移動・シャッフル尺の伸長）はPhase 1完了時点の挙動を維持する。
+- [x] `StartChallengeUseCase`、`SubmitAnswerUseCase`の呼び出し先を`ShuffleGenerator`へ更新する。
 - 対象ファイル：
   - `app/lib/features/game/domain/services/shuffle_generator.dart`（新規。`level_shuffle_planner.dart`を置き換え、削除する）
   - `app/lib/features/game/application/use_cases/start_challenge_use_case.dart`
@@ -147,3 +147,4 @@
 | Commit | 内容 | 検証結果 |
 | ------ | ---- | -------- |
 | 1 | `DifficultyProfile`（`level`/`performerCount`/`allowedMoves`）と`DifficultyResolver`を追加。Level 10以上はLevel 7〜9と同じ`allowedMoves`を暫定的に返す方針をユーザーと確認した上で実装。 | `flutter test test/features/game/domain/services/difficulty_resolver_test.dart` 全8件成功、`flutter analyze` 指摘なし |
+| 2 | `LevelShufflePlanner`を`ShuffleGenerator`へ置き換え。`DifficultyResolver`からレベルの`DifficultyProfile`を取得するが、生成アルゴリズム自体はPhase 1完了時点の左右移動パターンを全レベル共通で維持（pause/cross/feintの分岐は未実装、Commit 3・4で追加）。`StartChallengeUseCase`/`SubmitAnswerUseCase`のフィールド名を`planner`から`generator`へ変更。テストは`level_shuffle_planner_test.dart`を`shuffle_generator_test.dart`へ移行し、Level 1〜3がmove/transferのみで構成されることの確認を追加。 | `flutter test` 全44件成功、`flutter analyze` 指摘なし |

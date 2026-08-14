@@ -2,23 +2,28 @@ import 'dart:math';
 
 import '../entities/shuffle_plan.dart';
 import '../entities/shuffle_step.dart';
+import '../value_objects/difficulty_profile.dart';
 import '../value_objects/hand_id.dart';
 import '../value_objects/performer_position.dart';
 import '../value_objects/shuffle_step_type.dart';
+import 'difficulty_resolver.dart';
 
-/// Level共通の左右移動シャッフルを生成するドメインサービス。
+/// レベルに応じたシャッフル計画を生成するドメインサービス。
 ///
-/// Phase 1では演者1人・手2本の左右移動パターンのみを扱い、
-/// レベルが上がるほど往復回数（シャッフルの尺）を伸ばす。
-/// 終了時の保持手は開始時と同じ／異なるの両方があり得るようにし、
-/// 「開始手には戻らない」といった固定パターンを学習されないようにする。
-/// `cross`や`feint`などの複雑な動作種別はPhase 2以降で追加する。
-class LevelShufflePlanner {
-  const LevelShufflePlanner({
+/// `DifficultyResolver`からレベルごとの`DifficultyProfile`を取得したうえで
+/// 計画を組み立てる。`pause`・`cross`・`feint`を使った生成は後続のコミットで
+/// 難易度帯ごとに追加するため、現時点では演者1人・手2本の左右移動パターンを
+/// 全レベル共通で使う（往復回数だけがレベルに応じて伸びる）。
+class ShuffleGenerator {
+  const ShuffleGenerator({
+    this.resolver = const DifficultyResolver(),
     this.baseRepetitions = 2,
     this.repetitionIncrementPerLevel = 1,
     this.repetitionDuration = const Duration(milliseconds: 600),
   });
+
+  /// レベルごとの生成条件（`allowedMoves`等）を解決するドメインサービス。
+  final DifficultyResolver resolver;
 
   /// Level 1での左右往復回数。
   final int baseRepetitions;
@@ -37,6 +42,8 @@ class LevelShufflePlanner {
   /// 観察せずに正解できてしまうため、意図的に両方の結果を許容している。
   /// ただし何も動かないと退屈なので、最低1回は`transfer`を発生させる。
   ShufflePlan planFor({required int level, required int seed}) {
+    final DifficultyProfile profile = resolver.resolve(level);
+
     final HandId hand0 = HandId(performerPosition: PerformerPosition.frontCenter, handIndex: 0);
     final HandId hand1 = HandId(performerPosition: PerformerPosition.frontCenter, handIndex: 1);
 
@@ -44,7 +51,8 @@ class LevelShufflePlanner {
     final HandId initialHolder = random.nextBool() ? hand0 : hand1;
 
     // 左右往復の回数。レベルが上がるほど増え、シャッフルの尺が伸びる。
-    final int repetitions = baseRepetitions + (level - 1) * repetitionIncrementPerLevel;
+    final int repetitions =
+        baseRepetitions + (profile.level - 1) * repetitionIncrementPerLevel;
 
     // 各往復でコインを持ち替えるかどうかを個別に抽選する。
     final List<bool> transfersAtRepetition = <bool>[
