@@ -4,7 +4,7 @@
 | ----------- | ----------------------------------------------------------------------------------------------- |
 | ステータス  | Approved                                                                                         |
 | 対象Roadmap | Phase 2（シャッフルAIと難易度）                                                                 |
-| 関連設計    | vision.md（デザイン原則2, 7） / gdd.md（6, 7） / tdd.md（3, 5.2〜5.3） / decisions/0001 / decisions/0002 |
+| 関連設計    | vision.md（デザイン原則2, 7） / gdd.md（6, 7） / tdd.md（3, 5.2〜5.3） / decisions/0001 / decisions/0002 / decisions/0006 |
 
 ## 目的
 
@@ -70,7 +70,7 @@
 
 ### Commit 3 — Level 4〜6：pauseと緩急の追加
 
-- [ ] `ShuffleGenerator`にLevel 4〜6向けの生成を追加し、`pause`ステップと速度の緩急（`duration`の変化）を組み込む。
+- [x] `ShuffleGenerator`にLevel 4〜6向けの生成を追加し、`pause`ステップと速度の緩急（`duration`の変化）を組み込む。
 - 対象ファイル：
   - `app/lib/features/game/domain/services/shuffle_generator.dart`
   - 対応するテスト
@@ -80,10 +80,35 @@
 - 完了条件：
   - Level 4〜6の計画がLevel 1〜3と異なる構成（`pause`・緩急を含む）になり、保持手の一意性契約を満たす。
 
-### Commit 4 — Level 7〜9：cross・feintの追加
+### Commit 4 — シャッフル生成ロジックのファイル分割（挙動変更なし）
 
-- [ ] `ShuffleGenerator`にLevel 7〜9向けの生成を追加し、`cross`と`feint`ステップを組み込む。`feint`は保持手を変更しない契約を厳守する。
+- [x] Level 1〜3・Level 4〜6の生成戦略を`domain/services/shuffle/`配下の個別ファイル（`left_right_step_sequence_builder.dart`、`pause_tempo_step_sequence_builder.dart`）へ分割する。
+- [x] 共通処理（手の定義、抽選のヘルパー、緩急計算）を`domain/services/shuffle/`配下の共有ファイルへ抽出する。
+- [x] `ShuffleGenerator`は、難易度帯に応じて生成戦略を選び呼び出すだけの薄いオーケストレーターにする。
 - 対象ファイル：
+  - `app/lib/features/game/domain/services/shuffle_generator.dart`（オーケストレーターへ縮小）
+  - `app/lib/features/game/domain/services/shuffle/shuffle_hands.dart`（新規）
+  - `app/lib/features/game/domain/services/shuffle/shuffle_step_sequence.dart`（新規）
+  - `app/lib/features/game/domain/services/shuffle/shuffle_random_choices.dart`（新規）
+  - `app/lib/features/game/domain/services/shuffle/shuffle_tempo.dart`（新規）
+  - `app/lib/features/game/domain/services/shuffle/left_right_step_sequence_builder.dart`（新規）
+  - `app/lib/features/game/domain/services/shuffle/pause_tempo_step_sequence_builder.dart`（新規）
+  - 対応するテストファイル一式（Level 1〜3・Level 4〜6のテストをband別ファイルへ移行し、`shuffle_generator_test.dart`はオーケストレーションの検証に縮小する）
+  - `.github/docs/tdd.md`（3.2節のディレクトリ構成へ`domain/services/shuffle/`を反映）
+  - `.github/docs/decisions/0006-shuffle-generation-file-split.md`（新規、方針をADRとして記録）
+- 検証：
+  - `flutter test`（Commit 2・3で書いたテストと同じ内容が、移行後も全て緑であること）
+  - `flutter analyze`
+- 完了条件：
+  - Level 1〜6の生成結果がリファクタリング前と完全に一致し、挙動が変わっていないことをテストで示せる。
+  - `shuffle_generator.dart`が難易度帯に応じた生成戦略の選択とdelegateのみを担い、band別の生成ロジックを含まない。
+
+### Commit 5 — Level 7〜9：cross・feintの追加
+
+- [ ] `domain/services/shuffle/`配下にLevel 7〜9向けの生成戦略（`cross_feint_step_sequence_builder.dart`）を追加し、`cross`と`feint`ステップを組み込む。`feint`は保持手を変更しない契約を厳守する。
+- [ ] `ShuffleGenerator`に、`allowedMoves`が`cross`/`feint`を含む場合はこの戦略を選ぶ分岐を追加する。
+- 対象ファイル：
+  - `app/lib/features/game/domain/services/shuffle/cross_feint_step_sequence_builder.dart`（新規）
   - `app/lib/features/game/domain/services/shuffle_generator.dart`
   - 対応するテスト
 - 検証：
@@ -92,7 +117,7 @@
 - 完了条件：
   - Level 7〜9の計画が交差・フェイントを含み、`feint`が実際の受け渡し（`transfer`）とドメイン上区別される。
 
-### Commit 5 — ShuffleValidatorと再生成
+### Commit 6 — ShuffleValidatorと再生成
 
 - [ ] `ShuffleValidator`を実装し、保持手一意性、`transfer`以外での保持手不変、最低1回の`transfer`を検証する。
 - [ ] `ShuffleGenerator`が`ShuffleValidator`の検証に失敗した場合、別シードで再生成する（無限ループを防ぐ上限回数を設ける）。
@@ -106,7 +131,7 @@
 - 完了条件：
   - 不正な計画がPresentation層へ渡らないことをテストで示せる。
 
-### Commit 6 — 受け渡し・フェイントの視覚的手掛かり
+### Commit 7 — 受け渡し・フェイントの視覚的手掛かり
 
 - [ ] `HandsPainter`/`HandsView`を拡張し、`ShufflePlan`の経過時間に応じて手の位置を変化させる（`move`/`pause`/`cross`/`transfer`/`feint`が視覚的に区別できるようにする）。Rive導入前の簡易表現（円のプレースホルダー）のままとする。
 - 対象ファイル：
@@ -119,7 +144,7 @@
 - 完了条件：
   - GDD 7.2「すべての受け渡しには、視覚または音による手掛かりを少なくとも1つ残す」を、受け渡しとフェイントについて満たす。
 
-### Commit 7 — プレイテストとPhase 2完了ゲート
+### Commit 8 — プレイテストとPhase 2完了ゲート
 
 - [ ] プレイテストを実施し、正答率・見失う理由・再挑戦意欲を記録する。
 - [ ] Phase 2のフル検証（`dart format .`、`flutter analyze`、`flutter test`）を実行する。
@@ -139,7 +164,7 @@
 - `pause`の長さ、緩急の速度比、`feint`の発生確率などの数値パラメータは本Phaseでは確定しない。暫定値で仮実装し、プレイテストで調整する（Roadmap 10章）。
 - `ShuffleGenerator`の再生成上限回数、上限到達時のフォールバック挙動（例外を投げるか、検証を緩めた計画を許容するか）は未確定。
 - レベルごとのランダムな回答時間選択（`AnswerTimerConfig`の拡張）はRoadmap P2のため、本Phaseでは着手しない。
-- Commit 6の視覚的手掛かりの具体的な表現（色、軌道の形状等）は、Rive導入前の簡易実装であり、Phase 3で作り直される前提とする。
+- Commit 7の視覚的手掛かりの具体的な表現（色、軌道の形状等）は、Rive導入前の簡易実装であり、Phase 3で作り直される前提とする。
 - プレイテストの実施方法・対象人数・記録フォーマットは未確定。
 
 ## 実施記録
@@ -147,4 +172,6 @@
 | Commit | 内容 | 検証結果 |
 | ------ | ---- | -------- |
 | 1 | `DifficultyProfile`（`level`/`performerCount`/`allowedMoves`）と`DifficultyResolver`を追加。Level 10以上はLevel 7〜9と同じ`allowedMoves`を暫定的に返す方針をユーザーと確認した上で実装。 | `flutter test test/features/game/domain/services/difficulty_resolver_test.dart` 全8件成功、`flutter analyze` 指摘なし |
-| 2 | `LevelShufflePlanner`を`ShuffleGenerator`へ置き換え。`DifficultyResolver`からレベルの`DifficultyProfile`を取得するが、生成アルゴリズム自体はPhase 1完了時点の左右移動パターンを全レベル共通で維持（pause/cross/feintの分岐は未実装、Commit 3・4で追加）。`StartChallengeUseCase`/`SubmitAnswerUseCase`のフィールド名を`planner`から`generator`へ変更。テストは`level_shuffle_planner_test.dart`を`shuffle_generator_test.dart`へ移行し、Level 1〜3がmove/transferのみで構成されることの確認を追加。 | `flutter test` 全44件成功、`flutter analyze` 指摘なし |
+| 2 | `LevelShufflePlanner`を`ShuffleGenerator`へ置き換え。`DifficultyResolver`からレベルの`DifficultyProfile`を取得するが、生成アルゴリズム自体はPhase 1完了時点の左右移動パターンを全レベル共通で維持（pause/cross/feintの分岐は未実装、Commit 3・5で追加）。`StartChallengeUseCase`/`SubmitAnswerUseCase`のフィールド名を`planner`から`generator`へ変更。テストは`level_shuffle_planner_test.dart`を`shuffle_generator_test.dart`へ移行し、Level 1〜3がmove/transferのみで構成されることの確認を追加。 | `flutter test` 全44件成功、`flutter analyze` 指摘なし |
+| 3 | `ShuffleGenerator`に`allowedMoves`に`pause`が含まれるレベル（4以上）向けの生成経路`_planWithPauseAndTempo`を追加。往復の合間に確率的な`pause`（最低1回は保証）を挿入し、`move`/`transfer`の`duration`を`tempoVariationRatio`で揺らして緩急を表現（下限200msで視認不能な速度化を防止）。`pauseDuration`/`pauseProbability`/`tempoVariationRatio`はプレイテストで調整する暫定値としてコメントで明記。テストにpause出現・durationのばらつき・タイムライン整合性・保持手一意性契約（Level 6まで拡張）を追加。 | `flutter test` 全48件成功、`flutter analyze` 指摘なし |
+| 4 | Commit 4実装前にユーザーと相談し、今後cross/feint（Commit 5）・ShuffleValidator再生成（Commit 6）が加わると`shuffle_generator.dart`が肥大化する懸念からファイル分割を決定（ADR 0006）。`domain/services/shuffle/`を新設し、`shuffle_hands.dart`/`shuffle_step_sequence.dart`/`shuffle_random_choices.dart`/`shuffle_tempo.dart`（共通処理）と`left_right_step_sequence_builder.dart`/`pause_tempo_step_sequence_builder.dart`（band別戦略）へ分割。`shuffle_generator.dart`は`allowedMoves`に応じて戦略を選び`ShufflePlan`へ組み立てるオーケストレーターへ縮小。テストもband別ファイルへ移行し、`shuffle_generator_test.dart`はオーケストレーション（委譲の一致、band切り替え、level<1のエラー）の検証に絞った。挙動は変更していない（既存テストと同内容の移行分含め全て緑）。`tdd.md` 3.2節のディレクトリ構成も更新。以降のCommit番号を1つずつ繰り下げ（旧4→5、旧5→6、旧6→7、旧7→8）。 | `flutter test` 全56件成功、`flutter analyze` 指摘なし |

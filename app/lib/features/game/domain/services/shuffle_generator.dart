@@ -1,100 +1,51 @@
 import 'dart:math';
 
 import '../entities/shuffle_plan.dart';
-import '../entities/shuffle_step.dart';
 import '../value_objects/difficulty_profile.dart';
-import '../value_objects/hand_id.dart';
-import '../value_objects/performer_position.dart';
 import '../value_objects/shuffle_step_type.dart';
 import 'difficulty_resolver.dart';
+import 'shuffle/left_right_step_sequence_builder.dart';
+import 'shuffle/pause_tempo_step_sequence_builder.dart';
+import 'shuffle/shuffle_step_sequence.dart';
 
 /// レベルに応じたシャッフル計画を生成するドメインサービス。
 ///
-/// `DifficultyResolver`からレベルごとの`DifficultyProfile`を取得したうえで
-/// 計画を組み立てる。`pause`・`cross`・`feint`を使った生成は後続のコミットで
-/// 難易度帯ごとに追加するため、現時点では演者1人・手2本の左右移動パターンを
-/// 全レベル共通で使う（往復回数だけがレベルに応じて伸びる）。
+/// `DifficultyResolver`からレベルごとの`DifficultyProfile`を取得し、
+/// `allowedMoves`に応じて`domain/services/shuffle/`配下の生成戦略へ委譲する。
+/// 難易度帯別の生成ロジック自体はここに置かず、`ShuffleGenerator`は
+/// 戦略の選択とシード付き`ShufflePlan`への組み立てだけを担う。
 class ShuffleGenerator {
   const ShuffleGenerator({
     this.resolver = const DifficultyResolver(),
-    this.baseRepetitions = 2,
-    this.repetitionIncrementPerLevel = 1,
-    this.repetitionDuration = const Duration(milliseconds: 600),
+    this.leftRightBuilder = const LeftRightStepSequenceBuilder(),
+    this.pauseTempoBuilder = const PauseTempoStepSequenceBuilder(),
   });
 
   /// レベルごとの生成条件（`allowedMoves`等）を解決するドメインサービス。
   final DifficultyResolver resolver;
 
-  /// Level 1での左右往復回数。
-  final int baseRepetitions;
+  /// Level 1〜3向け：左右往復のみの生成戦略。
+  final LeftRightStepSequenceBuilder leftRightBuilder;
 
-  /// レベルが1上がるごとに増える往復回数。
-  final int repetitionIncrementPerLevel;
-
-  /// 1往復あたりの所要時間。
-  final Duration repetitionDuration;
+  /// Level 4以上向け：`pause`と緩急を加えた生成戦略。
+  final PauseTempoStepSequenceBuilder pauseTempoBuilder;
 
   /// 指定したレベル・シードに対応する`ShufflePlan`を生成する。
-  ///
-  /// 各往復ごとにコインを持ち替える（`transfer`）かどうかを抽選するため、
-  /// 終了時の保持手は開始時と同じ場合も異なる場合もあり得る。
-  /// 「開始手には戻らない」という固定パターンをプレイヤーに学習されると
-  /// 観察せずに正解できてしまうため、意図的に両方の結果を許容している。
-  /// ただし何も動かないと退屈なので、最低1回は`transfer`を発生させる。
   ShufflePlan planFor({required int level, required int seed}) {
     final DifficultyProfile profile = resolver.resolve(level);
-
-    final HandId hand0 = HandId(performerPosition: PerformerPosition.frontCenter, handIndex: 0);
-    final HandId hand1 = HandId(performerPosition: PerformerPosition.frontCenter, handIndex: 1);
-
     final Random random = Random(seed);
-    final HandId initialHolder = random.nextBool() ? hand0 : hand1;
 
-    // 左右往復の回数。レベルが上がるほど増え、シャッフルの尺が伸びる。
-    final int repetitions =
-        baseRepetitions + (profile.level - 1) * repetitionIncrementPerLevel;
-
-    // 各往復でコインを持ち替えるかどうかを個別に抽選する。
-    final List<bool> transfersAtRepetition = <bool>[
-      for (int i = 0; i < repetitions; i++) random.nextBool(),
-    ];
-    // 一度も持ち替えないとシャッフルとして機能しないため、最低1回は保証する。
-    if (!transfersAtRepetition.contains(true)) {
-      transfersAtRepetition[random.nextInt(repetitions)] = true;
-    }
-
-    final List<ShuffleStep> steps = <ShuffleStep>[];
-    // 往復を進めながら、その時点の保持手を追跡する。
-    HandId currentHolder = initialHolder;
-    for (int i = 0; i < repetitions; i++) {
-      if (transfersAtRepetition[i]) {
-        final HandId nextHolder = currentHolder == hand0 ? hand1 : hand0;
-        steps.add(
-          ShuffleStep(
-            start: repetitionDuration * i,
-            duration: repetitionDuration,
-            type: ShuffleStepType.transfer,
-            actors: <HandId>[currentHolder, nextHolder],
-          ),
-        );
-        currentHolder = nextHolder;
-      } else {
-        steps.add(
-          ShuffleStep(
-            start: repetitionDuration * i,
-            duration: repetitionDuration,
-            type: ShuffleStepType.move,
-            actors: <HandId>[hand0, hand1],
-          ),
-        );
-      }
-    }
+    // pauseが解禁されている難易度帯（Level 4以上）かどうかで生成戦略を切り替える。
+    // cross/feintを使う戦略は後続のコミットで同様に分岐を追加する。
+    final ShuffleStepSequence sequence = profile.allowedMoves.contains(ShuffleStepType.pause)
+        ? pauseTempoBuilder.build(profile: profile, random: random)
+        : leftRightBuilder.build(profile: profile, random: random);
 
     return ShufflePlan(
       seed: seed,
-      initialHolder: initialHolder,
-      steps: steps,
-      finalHolder: currentHolder,
+      initialHolder: sequence.initialHolder,
+      steps: sequence.steps,
+      finalHolder: sequence.finalHolder,
     );
   }
 }
