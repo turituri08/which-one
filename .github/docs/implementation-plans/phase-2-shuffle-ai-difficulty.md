@@ -43,8 +43,8 @@
 
 ### Commit 1 — DifficultyProfileとDifficultyResolverの追加
 
-- [ ] `DifficultyProfile`（`level`、`performerCount`、`allowedMoves`）を値オブジェクトとして追加する。
-- [ ] `DifficultyResolver`を実装し、GDD 6.2の難易度帯（Level 1〜3 / 4〜6 / 7〜9）に応じた`allowedMoves`を解決する。
+- [x] `DifficultyProfile`（`level`、`performerCount`、`allowedMoves`）を値オブジェクトとして追加する。
+- [x] `DifficultyResolver`を実装し、GDD 6.2の難易度帯（Level 1〜3 / 4〜6 / 7〜9）に応じた`allowedMoves`を解決する。
 - 対象ファイル：
   - `app/lib/features/game/domain/value_objects/difficulty_profile.dart`
   - `app/lib/features/game/domain/services/difficulty_resolver.dart`
@@ -146,3 +146,4 @@
 
 | Commit | 内容 | 検証結果 |
 | ------ | ---- | -------- |
+| 1 | `DifficultyProfile`（`level`/`performerCount`/`allowedMoves`）と`DifficultyResolver`を追加。Level 10以上はLevel 7〜9と同じ`allowedMoves`を暫定的に返す方針をユーザーと確認した上で実装。 | `flutter test test/features/game/domain/services/difficulty_resolver_test.dart` 全8件成功、`flutter analyze` 指摘なし |
