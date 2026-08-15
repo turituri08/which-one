@@ -8,9 +8,25 @@ import 'package:app/features/game/domain/services/shuffle/left_right_step_sequen
 import 'package:app/features/game/domain/services/shuffle/pause_tempo_step_sequence_builder.dart';
 import 'package:app/features/game/domain/services/shuffle/shuffle_step_sequence.dart';
 import 'package:app/features/game/domain/services/shuffle_generator.dart';
+import 'package:app/features/game/domain/services/shuffle_validator.dart';
 import 'package:app/features/game/domain/value_objects/hand_id.dart';
 import 'package:app/features/game/domain/value_objects/shuffle_step_type.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// 検証失敗を意図的に起こすためのテスト用フェイク。
+/// 呼び出し回数が`failCount`を超えるまでは常に無効と判定する。
+class _FailNTimesValidator extends ShuffleValidator {
+  _FailNTimesValidator(this.failCount);
+
+  final int failCount;
+  int _calls = 0;
+
+  @override
+  bool isValid(ShufflePlan plan) {
+    _calls++;
+    return _calls > failCount;
+  }
+}
 
 void main() {
   group('ShuffleGenerator', () {
@@ -126,6 +142,42 @@ void main() {
       final ShufflePlan level2 = generator.planFor(level: 2, seed: 1);
 
       expect(level2.totalDuration, greaterThan(level1.totalDuration));
+    });
+
+    test('検証に失敗した場合、別シードで再生成される', () {
+      final ShuffleGenerator generatorWithFakeValidator = ShuffleGenerator(
+        validator: _FailNTimesValidator(2),
+      );
+
+      // 3回目の試行でようやく有効と判定されるため、最終的に計画が返る。
+      final ShufflePlan plan = generatorWithFakeValidator.planFor(level: 1, seed: 1);
+
+      expect(plan.steps, isNotEmpty);
+    });
+
+    test('同じ(level, seed)なら、再生成を挟んでも常に同じ計画になる（再現性）', () {
+      final ShufflePlan a = ShuffleGenerator(
+        validator: _FailNTimesValidator(2),
+      ).planFor(level: 1, seed: 1);
+      final ShufflePlan b = ShuffleGenerator(
+        validator: _FailNTimesValidator(2),
+      ).planFor(level: 1, seed: 1);
+
+      expect(a.initialHolder, equals(b.initialHolder));
+      expect(a.finalHolder, equals(b.finalHolder));
+      expect(a.steps.length, equals(b.steps.length));
+    });
+
+    test('再生成を上限回数試しても有効な計画が得られない場合はStateErrorになる', () {
+      final ShuffleGenerator generatorWithFakeValidator = ShuffleGenerator(
+        validator: _FailNTimesValidator(999),
+        maxRegenerationAttempts: 3,
+      );
+
+      expect(
+        () => generatorWithFakeValidator.planFor(level: 1, seed: 1),
+        throwsA(isA<StateError>()),
+      );
     });
 
     test('保持手は常に1本であり、transfer以外の動作では保持手が変わらない（Level 1〜9の統合確認）', () {

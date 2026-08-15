@@ -120,8 +120,8 @@
 
 ### Commit 6 — ShuffleValidatorと再生成
 
-- [ ] `ShuffleValidator`を実装し、保持手一意性、`transfer`以外での保持手不変、最低1回の`transfer`を検証する。
-- [ ] `ShuffleGenerator`が`ShuffleValidator`の検証に失敗した場合、別シードで再生成する（無限ループを防ぐ上限回数を設ける）。
+- [x] `ShuffleValidator`を実装し、保持手一意性、`transfer`以外での保持手不変、最低1回の`transfer`を検証する。
+- [x] `ShuffleGenerator`が`ShuffleValidator`の検証に失敗した場合、別シードで再生成する（無限ループを防ぐ上限回数を設ける）。
 - 対象ファイル：
   - `app/lib/features/game/domain/services/shuffle_validator.dart`
   - `app/lib/features/game/domain/services/shuffle_generator.dart`
@@ -179,3 +179,4 @@
 | 5 | `domain/services/shuffle/cross_feint_step_sequence_builder.dart`を新規追加。cross・feint・transferをそれぞれ別々の往復へ確定的に割り当てる方式（先にcross用・feint用の往復を無作為に1つずつ確保し、残りからtransferを最低1回抽選）を採用し、確率的な欠落（0にはならないが理論上起こり得る「一度も出ない」パターン）を排除。pause・緩急は`PauseTempoStepSequenceBuilder`と同じ設計を踏襲。`feint`はtransferと同じ接触に見える動作だが保持手を更新しないことをコードとテストの両方で保証。往復回数3回未満は`ArgumentError`（既定値ではLevel 7以上で常に8回以上のため到達しない）。`ShuffleGenerator`に`allowedMoves`が`cross`を含む場合の分岐を追加（pauseの判定より先に評価）。テストはbuilder単体（cross/feint/transferの最低出現、feintの保持手不変、当事者に現在の保持手が含まれること、種別の網羅性、タイムライン単調性、異常系）と、ShuffleGenerator側の委譲確認・band切り替え確認・保持手一意性の統合確認（Level 1〜9まで拡張）を追加。 | `flutter test` 全66件成功、`flutter analyze` 指摘なし |
 | 5.1 | レビュー指摘を受け、cross・feintが往復回数によらず常にちょうど1回になっていた問題を修正。cross用・feint用に1往復ずつ確定的に確保する仕組みは維持しつつ、`transfer`に選ばれなかった残りの往復に対して`crossProbability`/`feintProbability`（既定0.25）による追加出現を組み込み、往復回数（＝レベル）が多いほどcross・feintの出現回数も増えるようにした。テストを「ちょうど1回」から「最低1回」の検証へ修正し、高レベル・多シードで2回以上出現するケースが実在することを確認するテストを追加。 | `flutter test` 全67件成功、`flutter analyze` 指摘なし |
 | 5.2 | ユーザーと相談し、「シャッフルとして成立するにはtransferの発生が必須だが、pause・cross・feintは演出であり出現しない回があってもよい」という方針で合意（GDD 6.1「各レベルは新しい難しさを追加する」原則との整合は、緩急・往復数増加が常に効くため許容範囲と判断）。`PauseTempoStepSequenceBuilder`の`pause`と`CrossFeintStepSequenceBuilder`の`cross`/`feint`から「最低1回保証」の仕組み（`ensureAtLeastOneTrue`によるpause強制、cross/feintの確定枠予約、往復回数3回未満の`ArgumentError`ガード）をすべて削除し、`transfer`のみ引き続き最低1回を保証する形に単純化。`CrossFeintStepSequenceBuilder`は`PauseTempoStepSequenceBuilder`とほぼ同型の「1往復ごとに独立した確率で主動作を決める」ロジックになった。テストを「最低1回含まれる」から「出現しない計画・出現する計画の両方が観測される」という確率的な検証へ全面的に修正し、Commit 3・5の検証項目・完了条件も計画書上でこの仕様に合わせて更新した。 | `flutter test` 全67件成功、`flutter analyze` 指摘なし |
+| 6 | `ShuffleValidator`を新規実装。検証項目は計画通り3点（最低1回のtransfer、transfer以外での保持手不変、transferの連鎖とfinalHolderの整合）に絞り、正解位置の偏りやフェイント量など他のGDD 7.4項目はPhase 2対象外のまま追加しないことをユーザーと確認。実装前に「Validatorが不正と判定する状況が現在のコードで実際に起こり得るか」を相談し、現行の生成戦略では発生し得ないが、tdd.md 5.3のパイプライン設計とPhase 5（複数演者化）以降の安全網として実装する方針で合意。`ShuffleGenerator`に検証・再生成ループを追加（同一`Random`インスタンスから引き続けることで(level, seed)ごとの再現性を維持）。上限到達時は`StateError`を投げる方針とし、上限回数は5回（実運用では到達しない想定）。過度に厳格な検証やコード複雑化を避けるよう指示を受け、チェック項目を最小限に留めた。テストは`ShuffleValidator`の正常系・不正系3パターンと、`ShuffleValidator`をテスト用にサブクラス化したフェイクによる再生成成功・再現性・上限到達時の`StateError`を追加。 | `flutter test` 全74件成功、`flutter analyze` 指摘なし |
