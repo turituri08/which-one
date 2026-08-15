@@ -31,17 +31,26 @@ void main() {
       expect(a.steps.length, equals(b.steps.length));
     });
 
-    test('pauseが最低1回含まれる', () {
-      for (final int level in <int>[4, 5, 6]) {
-        for (int seed = 0; seed < 20; seed++) {
-          final ShuffleStepSequence sequence = builder.build(
-            profile: _profileFor(level),
-            random: Random(seed),
-          );
+    test('pauseは確率的に発生し、出現しない往復・出現する往復の両方があり得る', () {
+      // pauseはtransferと違い最低出現回数を保証しないため、十分な数のシードを
+      // 試したときに「一度も出ない」結果と「出る」結果の両方が観測されることを確認する。
+      bool sawNoPause = false;
+      bool sawPause = false;
+      for (int seed = 0; seed < 50; seed++) {
+        final ShuffleStepSequence sequence = builder.build(
+          profile: _profileFor(4),
+          random: Random(seed),
+        );
 
-          expect(sequence.steps.where((s) => s.type == ShuffleStepType.pause).isNotEmpty, isTrue);
+        if (sequence.steps.where((s) => s.type == ShuffleStepType.pause).isEmpty) {
+          sawNoPause = true;
+        } else {
+          sawPause = true;
         }
       }
+
+      expect(sawNoPause, isTrue);
+      expect(sawPause, isTrue);
     });
 
     test('move/transfer/pause以外の種別が含まれない', () {

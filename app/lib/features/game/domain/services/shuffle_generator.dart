@@ -4,6 +4,7 @@ import '../entities/shuffle_plan.dart';
 import '../value_objects/difficulty_profile.dart';
 import '../value_objects/shuffle_step_type.dart';
 import 'difficulty_resolver.dart';
+import 'shuffle/cross_feint_step_sequence_builder.dart';
 import 'shuffle/left_right_step_sequence_builder.dart';
 import 'shuffle/pause_tempo_step_sequence_builder.dart';
 import 'shuffle/shuffle_step_sequence.dart';
@@ -19,6 +20,7 @@ class ShuffleGenerator {
     this.resolver = const DifficultyResolver(),
     this.leftRightBuilder = const LeftRightStepSequenceBuilder(),
     this.pauseTempoBuilder = const PauseTempoStepSequenceBuilder(),
+    this.crossFeintBuilder = const CrossFeintStepSequenceBuilder(),
   });
 
   /// レベルごとの生成条件（`allowedMoves`等）を解決するドメインサービス。
@@ -30,16 +32,24 @@ class ShuffleGenerator {
   /// Level 4以上向け：`pause`と緩急を加えた生成戦略。
   final PauseTempoStepSequenceBuilder pauseTempoBuilder;
 
+  /// Level 7以上向け：`cross`・`feint`を加えた生成戦略。
+  final CrossFeintStepSequenceBuilder crossFeintBuilder;
+
   /// 指定したレベル・シードに対応する`ShufflePlan`を生成する。
   ShufflePlan planFor({required int level, required int seed}) {
     final DifficultyProfile profile = resolver.resolve(level);
     final Random random = Random(seed);
 
-    // pauseが解禁されている難易度帯（Level 4以上）かどうかで生成戦略を切り替える。
-    // cross/feintを使う戦略は後続のコミットで同様に分岐を追加する。
-    final ShuffleStepSequence sequence = profile.allowedMoves.contains(ShuffleStepType.pause)
-        ? pauseTempoBuilder.build(profile: profile, random: random)
-        : leftRightBuilder.build(profile: profile, random: random);
+    // 難易度帯が広い順（cross > pause > 左右移動のみ）に判定する。
+    // Level 7以上はpauseも含むため、crossの判定を先に行う必要がある。
+    final ShuffleStepSequence sequence;
+    if (profile.allowedMoves.contains(ShuffleStepType.cross)) {
+      sequence = crossFeintBuilder.build(profile: profile, random: random);
+    } else if (profile.allowedMoves.contains(ShuffleStepType.pause)) {
+      sequence = pauseTempoBuilder.build(profile: profile, random: random);
+    } else {
+      sequence = leftRightBuilder.build(profile: profile, random: random);
+    }
 
     return ShufflePlan(
       seed: seed,
