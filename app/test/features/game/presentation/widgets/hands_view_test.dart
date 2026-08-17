@@ -86,6 +86,42 @@ void main() {
       expect(painter.plan, isNull);
     });
 
+    testWidgets('shuffling終了直後は、基準位置へ0.5秒かけて滑らかに戻る', (WidgetTester tester) async {
+      final ShufflePlan plan = _generator.planFor(level: 1, seed: 1);
+
+      await _pumpHandsView(
+        tester,
+        GameUiState(phase: GamePhase.shuffling, level: 1, plan: plan),
+      );
+      await tester.pump(plan.totalDuration);
+
+      // シャッフル終了。answeringへ遷移した直後は、直前のplanを保持したまま
+      // 経過時間をtotalDurationに固定し、returnProgressで基準位置へ寄せる。
+      await _pumpHandsView(
+        tester,
+        GameUiState(phase: GamePhase.answering, level: 1, plan: plan, remainingSeconds: 30),
+      );
+      await tester.pump();
+
+      HandsPainter painter = _findHandsPainter(tester);
+      expect(painter.plan, same(plan));
+      expect(painter.elapsed, plan.totalDuration);
+      expect(painter.returnProgress, 0.0);
+
+      // 戻りアニメーションの途中では、0より大きく1未満の進捗になる。
+      await tester.pump(const Duration(milliseconds: 250));
+      painter = _findHandsPainter(tester);
+      expect(painter.returnProgress, greaterThan(0.0));
+      expect(painter.returnProgress, lessThan(1.0));
+
+      // 0.5秒経過すると戻りアニメーションが完了し、以降はplanがnullに戻る
+      // （HandsPainter側のフォールバックで常に基準位置になる）。
+      await tester.pump(const Duration(milliseconds: 300));
+      painter = _findHandsPainter(tester);
+      expect(painter.plan, isNull);
+      expect(painter.returnProgress, 0.0);
+    });
+
     testWidgets('複数レベルにまたがってもクラッシュしない（Tickerの作り直しの確認）', (WidgetTester tester) async {
       final ShufflePlan level1Plan = _generator.planFor(level: 1, seed: 1);
       final ShufflePlan level2Plan = _generator.planFor(level: 2, seed: 1);

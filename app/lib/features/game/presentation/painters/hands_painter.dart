@@ -12,31 +12,51 @@ import '../../domain/value_objects/shuffle_step_type.dart';
 /// シャッフル中の経過時間から現在アクティブな`ShuffleStep`を求め、
 /// その種別（move/pause/cross/transfer/feint）に応じて手の位置を変化させる。
 ///
-/// `cross`/`transfer`で入れ替わった左右の位置は、次に`cross`/`transfer`が
-/// 起きるまで（＝複数stepにまたがって）維持される。`shuffling`フェーズが
-/// 終わる（`plan`がnullになる）と、必ず`stagePositionFor`の基準位置の表示に
-/// 戻る。色・軌道の具体的な表現はRive導入前の暫定実装であり、Phase 3で
-/// 作り直される前提とする。
+/// `move`で移動した先や`cross`/`transfer`で入れ替わった位置は、次にその手の
+/// 位置を変える動作（`move`/`cross`/`transfer`）が起きるまで、複数stepに
+/// またがって持続する。`shuffling`フェーズが終わると、`returnProgress`に
+/// 応じて基準位置（`stagePositionFor`）へ滑らかに戻る（＝プレイヤーに回答を
+/// 求める瞬間、パッと消えず追える速さで元の位置へ戻る）。色・軌道の具体的な
+/// 表現はRive導入前の暫定実装であり、Phase 3で作り直される前提とする。
 class HandsPainter extends CustomPainter {
-  const HandsPainter({required this.coinHolderHandIndex, this.plan, this.elapsed = Duration.zero});
+  const HandsPainter({
+    required this.coinHolderHandIndex,
+    this.plan,
+    this.elapsed = Duration.zero,
+    this.returnProgress = 0.0,
+  });
 
   /// コインを保持している手のindex（0または1）。表示しない場合はnull。
   ///
   /// コイン確認フェーズ以外はnullを渡し、保持位置を隠す。
   final int? coinHolderHandIndex;
 
-  /// アニメーションの基準にするシャッフル計画。`shuffling`フェーズ中以外はnull。
+  /// アニメーションの基準にするシャッフル計画。
+  ///
+  /// `shuffling`中はそのままのプランを、`shuffling`終了直後の「基準位置へ
+  /// 戻る」演出中は直前まで使っていたプランを渡し続ける（`returnProgress`で
+  /// 見た目を基準位置側へ寄せる）。それ以外のフェーズではnull。
   final ShufflePlan? plan;
 
   /// シャッフル開始からの経過時間。`plan`がnullの場合は使われない。
+  ///
+  /// 「基準位置へ戻る」演出中は、シャッフル終了時点（`plan.totalDuration`）で
+  /// 固定した値を渡す想定。
   final Duration elapsed;
+
+  /// 基準位置へ戻る演出の進捗（0.0＝シャッフル中の位置のまま、1.0＝完全に
+  /// 基準位置）。`shuffling`フェーズ中は常に0.0を渡す。
+  final double returnProgress;
 
   static const double radiusRatio = 0.12;
 
-  // moveの上下バウンス幅・左右の弧の幅（ステージ座標比）。
-  // cross/transfer/feintの往復幅よりずっと小さくし、交差とは紛れないようにする。
-  static const double _moveBounceAmplitude = 0.03;
-  static const double _moveDriftAmplitude = 0.02;
+  // moveで手が移動できるステージ範囲（画面端に寄りすぎないよう余白を持たせる）。
+  // cross/transfer/feintの往復（2手の位置を結ぶ軌道）とは別に、画面全体を
+  // 使って大きく動かすことで「意味のある動き」に見えるようにする。
+  static const double _moveMinX = 0.12;
+  static const double _moveMaxX = 0.88;
+  static const double _moveMinY = 0.15;
+  static const double _moveMaxY = 0.85;
 
   // feintが相手側へ近づく際の到達率（1.0で完全に重なる）。
   // 「重なる直前で引き返す」ことを表すため1.0未満にする。
@@ -57,17 +77,38 @@ class HandsPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final double radius = size.shortestSide * radiusRatio;
     final Paint fillPaint = Paint()..color = Colors.white;
-    final Paint strokePaint = Paint()
-      ..color = Colors.black87
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
 
     final int? activeStepIndex = _activeStepIndexAt(elapsed);
     final ShuffleStep? activeStep = activeStepIndex == null ? null : plan!.steps[activeStepIndex];
     final Duration elapsedInStep = activeStep == null ? Duration.zero : elapsed - activeStep.start;
+    // activeStepIndexがnullなのは「planがない」か「シャッフルの尺を過ぎた」かの
+    // どちらか。後者では、そこまでに持続していた位置（全stepを辿った結果）を
+    // 使う必要があるため、単純に基準位置へフォールバックしてはいけない。
+    final (Offset before0, Offset before1) = plan == null
+        ? (stagePositionFor(0), stagePositionFor(1))
+        : _positionsBeforeStep(activeStepIndex ?? plan!.steps.length);
 
     for (final int handIndex in <int>[0, 1]) {
-      final Offset center = _animatedCenter(handIndex, size, activeStepIndex, activeStep, elapsedInStep);
+      final Offset shuffleStagePosition = _animatedStagePosition(
+        handIndex: handIndex,
+        stepIndex: activeStepIndex,
+        step: activeStep,
+        elapsedInStep: elapsedInStep,
+        before: handIndex == 0 ? before0 : before1,
+        otherBefore: handIndex == 0 ? before1 : before0,
+      );
+      // returnProgressが0より大きい間は、シャッフル中の位置から基準位置へ
+      // 滑らかに寄せる（「回答を求める瞬間にパッと消える」ことを防ぐ）。
+      final Offset stagePosition = returnProgress <= 0
+          ? shuffleStagePosition
+          : Offset.lerp(shuffleStagePosition, stagePositionFor(handIndex), returnProgress)!;
+      final Offset center = Offset(stagePosition.dx * size.width, stagePosition.dy * size.height);
+      // デバッグ用に、どちらの手（actor）かを縁の色で区別する
+      // （hand0=青、hand1=赤）。本番の見た目はRive導入後に作り直す。
+      final Paint strokePaint = Paint()
+        ..color = handIndex == 0 ? Colors.blue : Colors.red
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3;
       canvas.drawCircle(center, radius, fillPaint);
       canvas.drawCircle(center, radius, strokePaint);
 
@@ -78,61 +119,90 @@ class HandsPainter extends CustomPainter {
     }
   }
 
-  Offset _animatedCenter(
-    int handIndex,
-    Size size,
-    int? activeStepIndex,
-    ShuffleStep? step,
-    Duration elapsedInStep,
-  ) {
-    // その時点までにcross/transferが何回起きたかを積み上げ、
-    // 「今、画面のどちら側にいるか」を求める（複数stepにまたがって持続する）。
-    final bool swapped = activeStepIndex == null ? false : _isSwappedBefore(activeStepIndex);
-    final int effectiveIndex = swapped ? 1 - handIndex : handIndex;
-    final Offset base = stagePositionFor(effectiveIndex);
-    final Offset other = stagePositionFor(1 - effectiveIndex);
-
-    Offset stagePosition;
+  Offset _animatedStagePosition({
+    required int handIndex,
+    required int? stepIndex,
+    required ShuffleStep? step,
+    required Duration elapsedInStep,
+    required Offset before,
+    required Offset otherBefore,
+  }) {
     switch (step?.type) {
       case null:
       case ShuffleStepType.pause:
         // 停止：何も動かさず、リズムを切ることを表す。
-        stagePosition = base;
+        return before;
       case ShuffleStepType.move:
-        // 移動：小さな弧を描くように上下・左右へ揺らし、
-        // 「停止ではなく動いている」ことを示す（直線・曲線・上下移動の暫定表現）。
+        // 移動：画面内の新しい位置まで大きく動く。到達した位置は、次に
+        // その手が動く（move/cross/transfer）まで持続する。
+        final Offset target = _moveTargetFor(stepIndex: stepIndex!, handIndex: handIndex);
         final double progress = _progress(step!, elapsedInStep);
-        final double bounce = sin(pi * progress) * _moveBounceAmplitude;
-        final double drift = sin(2 * pi * progress) * _moveDriftAmplitude;
-        stagePosition = Offset(base.dx + drift, base.dy - bounce);
+        return Offset.lerp(before, target, progress)!;
       case ShuffleStepType.cross:
-        // 交差：相手側まで進み、そのまま重なって終わる（左右が入れ替わる）。
-        // 入れ替わった位置は次のcross/transferまで、または今回のshuffling
+        // 交差：相手の位置まで進み、そのまま入れ替わって終わる。
+        // 入れ替わった位置は次にその手が動くまで、または今回のshuffling
         // フェーズが終わるまで持続する。
         final double progress = _progress(step!, elapsedInStep);
-        stagePosition = Offset.lerp(base, other, progress)!;
+        return Offset.lerp(before, otherBefore, progress)!;
       case ShuffleStepType.feint:
         // フェイント：crossと同じ軌道だが、重なる手前（_feintReachRatio）で
         // 自分の位置へ引き返す。位置は入れ替わらない
         // （「本当の受け渡しではなかった」と事後に理解できる動き）。
         final double progress = _progress(step!, elapsedInStep);
-        stagePosition = Offset.lerp(base, other, _pingPong(progress) * _feintReachRatio)!;
+        return Offset.lerp(before, otherBefore, _pingPong(progress) * _feintReachRatio)!;
       case ShuffleStepType.transfer:
         // 受け渡し：中間地点（接触点）まで進んで少し静止し
-        // （コインを渡している間を表す）、その後相手側まで進んで終わる
-        // （左右が入れ替わる）。
-        stagePosition = _transferPosition(step!, elapsedInStep, base, other);
+        // （コインを渡している間を表す）、その後相手の位置まで進んで終わる
+        // （位置が入れ替わる）。
+        return _transferPosition(step!, elapsedInStep, before, otherBefore);
       case ShuffleStepType.exitStage:
       case ShuffleStepType.enterStage:
         // Phase 2では未使用（画面外移動はPhase 5で扱う）。
-        stagePosition = base;
+        return before;
     }
-    return Offset(stagePosition.dx * size.width, stagePosition.dy * size.height);
+  }
+
+  /// stepIndex番目のstepが始まる直前の、hand0・hand1の位置を求める。
+  ///
+  /// `move`は新しい位置へ、`cross`/`transfer`は2手の位置を入れ替える形で
+  /// 持続的に位置を変えるため、履歴を先頭から辿って再現する。
+  (Offset, Offset) _positionsBeforeStep(int stepIndex) {
+    Offset pos0 = stagePositionFor(0);
+    Offset pos1 = stagePositionFor(1);
+    for (int i = 0; i < stepIndex; i++) {
+      switch (plan!.steps[i].type) {
+        case ShuffleStepType.move:
+          pos0 = _moveTargetFor(stepIndex: i, handIndex: 0);
+          pos1 = _moveTargetFor(stepIndex: i, handIndex: 1);
+        case ShuffleStepType.cross:
+        case ShuffleStepType.transfer:
+          final Offset swapped = pos0;
+          pos0 = pos1;
+          pos1 = swapped;
+        case ShuffleStepType.pause:
+        case ShuffleStepType.feint:
+        case ShuffleStepType.exitStage:
+        case ShuffleStepType.enterStage:
+        // 位置を変えない動作。
+      }
+    }
+    return (pos0, pos1);
+  }
+
+  /// `stepIndex`番目の`move`で`handIndex`が向かう先のステージ座標。
+  ///
+  /// `plan.seed`とstep・手のインデックスから決めるため、同じ計画なら
+  /// 常に同じ位置になる（再現性を保ちつつ、往復ごとに異なる位置へ動く）。
+  Offset _moveTargetFor({required int stepIndex, required int handIndex}) {
+    final Random random = Random(plan!.seed ^ (stepIndex * 31 + handIndex));
+    final double x = _moveMinX + random.nextDouble() * (_moveMaxX - _moveMinX);
+    final double y = _moveMinY + random.nextDouble() * (_moveMaxY - _moveMinY);
+    return Offset(x, y);
   }
 
   /// `transfer`の3段階（接近・接触点で静止・完了）の位置を、実時間に沿って求める。
-  Offset _transferPosition(ShuffleStep step, Duration elapsedInStep, Offset base, Offset other) {
-    final Offset contactPoint = Offset.lerp(base, other, 0.5)!;
+  Offset _transferPosition(ShuffleStep step, Duration elapsedInStep, Offset before, Offset otherBefore) {
+    final Offset contactPoint = Offset.lerp(before, otherBefore, 0.5)!;
 
     // stepが短い場合に静止時間だけで使い切ってしまわないよう、
     // stepの所要時間の半分を上限にして切り詰める。
@@ -146,27 +216,13 @@ class HandsPainter extends CustomPainter {
     final Duration completeDuration = remaining - approachDuration;
 
     if (elapsedInStep < approachDuration) {
-      return Offset.lerp(base, contactPoint, _ratio(elapsedInStep, approachDuration))!;
+      return Offset.lerp(before, contactPoint, _ratio(elapsedInStep, approachDuration))!;
     }
     if (elapsedInStep < approachDuration + cappedHold) {
       return contactPoint;
     }
     final Duration intoComplete = elapsedInStep - approachDuration - cappedHold;
-    return Offset.lerp(contactPoint, other, _ratio(intoComplete, completeDuration))!;
-  }
-
-  /// stepインデックス`stepIndex`より前に、cross/transferが奇数回起きていれば
-  /// 左右が入れ替わった状態になっている。
-  bool _isSwappedBefore(int stepIndex) {
-    final List<ShuffleStep> steps = plan!.steps;
-    bool swapped = false;
-    for (int i = 0; i < stepIndex; i++) {
-      final ShuffleStepType type = steps[i].type;
-      if (type == ShuffleStepType.cross || type == ShuffleStepType.transfer) {
-        swapped = !swapped;
-      }
-    }
-    return swapped;
+    return Offset.lerp(contactPoint, otherBefore, _ratio(intoComplete, completeDuration))!;
   }
 
   /// 0→1→0（往復）の三角波。`progress`が0.5のとき最大値1.0になる。
@@ -199,5 +255,6 @@ class HandsPainter extends CustomPainter {
   bool shouldRepaint(covariant HandsPainter oldDelegate) =>
       oldDelegate.coinHolderHandIndex != coinHolderHandIndex ||
       oldDelegate.plan != plan ||
-      oldDelegate.elapsed != elapsed;
+      oldDelegate.elapsed != elapsed ||
+      oldDelegate.returnProgress != returnProgress;
 }

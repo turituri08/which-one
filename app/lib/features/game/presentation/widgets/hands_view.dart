@@ -13,6 +13,8 @@ import '../view_models/game_ui_state.dart';
 /// 円と同じステージ座標へ重ねる。`shuffling`フェーズ中は`AnimationController`で
 /// `ShufflePlan`の経過時間を進め、`HandsPainter`に渡してアニメーションさせる
 /// （初期実装ではFlutter標準の`AnimationController`/`CustomPainter`を使う）。
+/// `shuffling`が終わった直後は、別の`AnimationController`で基準位置へ
+/// 滑らかに戻す演出を挟む（パッと消えると保持手を追えなくなるため）。
 class HandsView extends StatefulWidget {
   const HandsView({super.key, required this.state, required this.onHandTap});
 
@@ -32,6 +34,12 @@ class _HandsViewState extends State<HandsView> with TickerProviderStateMixin {
   AnimationController? _controller;
   ShufflePlan? _animatingPlan;
 
+  // shuffling終了直後に、基準位置へ戻る演出を担うController。
+  AnimationController? _returnController;
+  ShufflePlan? _returningFromPlan;
+
+  static const Duration _returnDuration = Duration(milliseconds: 500);
+
   @override
   void initState() {
     super.initState();
@@ -47,34 +55,63 @@ class _HandsViewState extends State<HandsView> with TickerProviderStateMixin {
   @override
   void dispose() {
     _controller?.dispose();
+    _returnController?.dispose();
     super.dispose();
   }
 
   /// `shuffling`フェーズに入ったら計画の尺で`AnimationController`を作って回し、
-  /// それ以外のフェーズでは破棄する。同じ計画のまま再度呼ばれても作り直さない。
+  /// それ以外のフェーズへ遷移した直後は、直前の計画を使って基準位置へ戻る
+  /// 演出を開始する。同じ計画のまま再度呼ばれても作り直さない。
   void _syncController() {
     final GamePhase phase = widget.state.phase;
     final ShufflePlan? plan = widget.state.plan;
 
-    if (phase != GamePhase.shuffling || plan == null) {
+    if (phase == GamePhase.shuffling && plan != null) {
+      // 新しいシャッフルが始まったら、進行中の「戻る」演出は打ち切る。
+      _returnController?.dispose();
+      _returnController = null;
+      _returningFromPlan = null;
+
+      if (identical(_animatingPlan, plan) && _controller != null) {
+        return;
+      }
       _controller?.dispose();
-      _controller = null;
-      _animatingPlan = null;
+      final Duration duration = plan.totalDuration > Duration.zero
+          ? plan.totalDuration
+          : const Duration(milliseconds: 1);
+      _controller = AnimationController(vsync: this, duration: duration)
+        ..addListener(() => setState(() {}))
+        ..forward();
+      _animatingPlan = plan;
       return;
     }
 
-    if (identical(_animatingPlan, plan) && _controller != null) {
-      return;
+    // shuffling以外へ遷移した。直前までシャッフルしていた計画があれば、
+    // 基準位置へ滑らかに戻る演出を開始する。
+    if (_controller != null && _animatingPlan != null) {
+      _returningFromPlan = _animatingPlan;
+      _returnController?.dispose();
+      _returnController = AnimationController(vsync: this, duration: _returnDuration)
+        ..addListener(() => setState(() {}))
+        ..addStatusListener(_onReturnStatusChanged)
+        ..forward();
     }
-
     _controller?.dispose();
-    final Duration duration = plan.totalDuration > Duration.zero
-        ? plan.totalDuration
-        : const Duration(milliseconds: 1);
-    _controller = AnimationController(vsync: this, duration: duration)
-      ..addListener(() => setState(() {}))
-      ..forward();
-    _animatingPlan = plan;
+    _controller = null;
+    _animatingPlan = null;
+  }
+
+  void _onReturnStatusChanged(AnimationStatus status) {
+    if (status != AnimationStatus.completed) {
+      return;
+    }
+    // 戻り演出が完了したら、以降はHandsPainterのplan=nullフォールバック
+    // （常に基準位置）に任せてよいので、Controllerを片付ける。
+    setState(() {
+      _returnController?.dispose();
+      _returnController = null;
+      _returningFromPlan = null;
+    });
   }
 
   @override
@@ -86,9 +123,17 @@ class _HandsViewState extends State<HandsView> with TickerProviderStateMixin {
         ? state.plan?.initialHolder.handIndex
         : null;
     final bool isShuffling = state.phase == GamePhase.shuffling && _controller != null;
+    final bool isReturning = _returnController != null && _returningFromPlan != null;
+
+    final ShufflePlan? animatedPlan = isShuffling
+        ? state.plan
+        : (isReturning ? _returningFromPlan : null);
     final Duration elapsed = isShuffling
         ? state.plan!.totalDuration * _controller!.value
-        : Duration.zero;
+        : (isReturning ? _returningFromPlan!.totalDuration : Duration.zero);
+    final double returnProgress = isReturning
+        ? Curves.easeOut.transform(_returnController!.value)
+        : 0.0;
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
@@ -99,8 +144,9 @@ class _HandsViewState extends State<HandsView> with TickerProviderStateMixin {
               size: size,
               painter: HandsPainter(
                 coinHolderHandIndex: coinHolderHandIndex,
-                plan: isShuffling ? state.plan : null,
+                plan: animatedPlan,
                 elapsed: elapsed,
+                returnProgress: returnProgress,
               ),
             ),
             for (final int handIndex in <int>[0, 1]) _buildTapTarget(size, handIndex, canAnswer),
