@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:app/features/game/domain/entities/shuffle_step.dart';
-import 'package:app/features/game/domain/services/shuffle/pause_tempo_step_sequence_builder.dart';
+import 'package:app/features/game/domain/services/shuffle/cross_pause_step_sequence_builder.dart';
 import 'package:app/features/game/domain/services/shuffle/shuffle_step_sequence.dart';
 import 'package:app/features/game/domain/value_objects/difficulty_profile.dart';
 import 'package:app/features/game/domain/value_objects/hand_id.dart';
@@ -20,8 +20,8 @@ DifficultyProfile _profileFor(int level) => DifficultyProfile(
 );
 
 void main() {
-  group('PauseTempoStepSequenceBuilder', () {
-    const PauseTempoStepSequenceBuilder builder = PauseTempoStepSequenceBuilder();
+  group('CrossPauseStepSequenceBuilder', () {
+    const CrossPauseStepSequenceBuilder builder = CrossPauseStepSequenceBuilder();
 
     test('同じレベル・シードなら同じ結果になる（再現性）', () {
       final ShuffleStepSequence a = builder.build(profile: _profileFor(4), random: Random(42));

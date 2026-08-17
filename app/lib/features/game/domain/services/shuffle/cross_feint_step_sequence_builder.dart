@@ -10,7 +10,7 @@ import 'shuffle_tempo.dart';
 
 /// Level 7以上向け：`feint`（見せかけの動き）を加える生成戦略。
 ///
-/// `cross`・`pause`・緩急は`PauseTempoStepSequenceBuilder`と同様に維持したうえで、
+/// `cross`・`pause`・緩急は`CrossPauseStepSequenceBuilder`と同様に維持したうえで、
 /// フェイントを追加し、暗記だけでは突破できない難易度帯にする。
 /// `feint`は実際の受け渡し（`transfer`）と紛らわしい動きを見せるが、
 /// 保持手を変更しないという契約は厳守する。

@@ -13,7 +13,7 @@
 ## 決定
 
 - `ShuffleGenerator`は、`DifficultyResolver`の出力（`allowedMoves`）に応じて難易度帯別の生成戦略を選び呼び出す、薄いオーケストレーターとする。
-- 難易度帯別の生成戦略は`domain/services/shuffle/`配下に個別ファイルとして配置する（例：`left_right_step_sequence_builder.dart`、`pause_tempo_step_sequence_builder.dart`）。
+- 難易度帯別の生成戦略は`domain/services/shuffle/`配下に個別ファイルとして配置する（例：`left_right_step_sequence_builder.dart`、`cross_pause_step_sequence_builder.dart`）。
 - 生成戦略間で共有する処理（手の定義、抽選ヘルパー、緩急計算）も`domain/services/shuffle/`配下の共有ファイルへ抽出する。
 - `tdd.md` 3.2節のディレクトリ構成に`domain/services/shuffle/`を反映する。
 

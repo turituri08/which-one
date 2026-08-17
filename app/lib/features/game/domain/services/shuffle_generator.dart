@@ -5,8 +5,8 @@ import '../value_objects/difficulty_profile.dart';
 import '../value_objects/shuffle_step_type.dart';
 import 'difficulty_resolver.dart';
 import 'shuffle/cross_feint_step_sequence_builder.dart';
+import 'shuffle/cross_pause_step_sequence_builder.dart';
 import 'shuffle/left_right_step_sequence_builder.dart';
-import 'shuffle/pause_tempo_step_sequence_builder.dart';
 import 'shuffle/shuffle_step_sequence.dart';
 import 'shuffle_validator.dart';
 
@@ -21,7 +21,7 @@ class ShuffleGenerator {
   const ShuffleGenerator({
     this.resolver = const DifficultyResolver(),
     this.leftRightBuilder = const LeftRightStepSequenceBuilder(),
-    this.pauseTempoBuilder = const PauseTempoStepSequenceBuilder(),
+    this.crossPauseBuilder = const CrossPauseStepSequenceBuilder(),
     this.crossFeintBuilder = const CrossFeintStepSequenceBuilder(),
     this.validator = const ShuffleValidator(),
     this.maxRegenerationAttempts = 5,
@@ -34,7 +34,7 @@ class ShuffleGenerator {
   final LeftRightStepSequenceBuilder leftRightBuilder;
 
   /// Level 4〜6向け：`cross`・`pause`と緩急を加えた生成戦略（`feint`は含まない）。
-  final PauseTempoStepSequenceBuilder pauseTempoBuilder;
+  final CrossPauseStepSequenceBuilder crossPauseBuilder;
 
   /// Level 7以上向け：`feint`を加えた生成戦略。
   final CrossFeintStepSequenceBuilder crossFeintBuilder;
@@ -86,7 +86,7 @@ class ShuffleGenerator {
     if (profile.allowedMoves.contains(ShuffleStepType.feint)) {
       sequence = crossFeintBuilder.build(profile: profile, random: random);
     } else if (profile.allowedMoves.contains(ShuffleStepType.cross)) {
-      sequence = pauseTempoBuilder.build(profile: profile, random: random);
+      sequence = crossPauseBuilder.build(profile: profile, random: random);
     } else {
       sequence = leftRightBuilder.build(profile: profile, random: random);
     }

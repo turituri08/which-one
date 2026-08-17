@@ -15,8 +15,8 @@ import 'shuffle_tempo.dart';
 /// 交差・静止を織り交ぜ、移動速度も揺らすことでリズムを読みにくくする。
 /// 停止・緩急・交差を加えても、保持手を変更できるのは`transfer`のみという
 /// 契約は`LeftRightStepSequenceBuilder`と変わらない。
-class PauseTempoStepSequenceBuilder {
-  const PauseTempoStepSequenceBuilder({
+class CrossPauseStepSequenceBuilder {
+  const CrossPauseStepSequenceBuilder({
     this.baseRepetitions = 2,
     this.repetitionIncrementPerLevel = 1,
     this.repetitionDuration = const Duration(milliseconds: 600),

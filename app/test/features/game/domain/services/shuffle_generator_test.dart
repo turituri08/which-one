@@ -4,8 +4,8 @@ import 'package:app/features/game/domain/entities/shuffle_plan.dart';
 import 'package:app/features/game/domain/entities/shuffle_step.dart';
 import 'package:app/features/game/domain/services/difficulty_resolver.dart';
 import 'package:app/features/game/domain/services/shuffle/cross_feint_step_sequence_builder.dart';
+import 'package:app/features/game/domain/services/shuffle/cross_pause_step_sequence_builder.dart';
 import 'package:app/features/game/domain/services/shuffle/left_right_step_sequence_builder.dart';
-import 'package:app/features/game/domain/services/shuffle/pause_tempo_step_sequence_builder.dart';
 import 'package:app/features/game/domain/services/shuffle/shuffle_step_sequence.dart';
 import 'package:app/features/game/domain/services/shuffle_generator.dart';
 import 'package:app/features/game/domain/services/shuffle_validator.dart';
@@ -62,12 +62,12 @@ void main() {
       }
     });
 
-    test('Level 4〜6はPauseTempoStepSequenceBuilderの結果とそのまま一致する（委譲の確認）', () {
-      const PauseTempoStepSequenceBuilder pauseTempoBuilder = PauseTempoStepSequenceBuilder();
+    test('Level 4〜6はCrossPauseStepSequenceBuilderの結果とそのまま一致する（委譲の確認）', () {
+      const CrossPauseStepSequenceBuilder crossPauseBuilder = CrossPauseStepSequenceBuilder();
 
       for (final int level in <int>[4, 5, 6]) {
         final ShufflePlan plan = generator.planFor(level: level, seed: 7);
-        final ShuffleStepSequence expected = pauseTempoBuilder.build(
+        final ShuffleStepSequence expected = crossPauseBuilder.build(
           profile: resolver.resolve(level),
           random: Random(7),
         );
