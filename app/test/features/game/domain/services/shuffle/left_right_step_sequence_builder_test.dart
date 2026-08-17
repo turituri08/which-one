@@ -27,18 +27,27 @@ void main() {
       expect(a.steps.length, equals(b.steps.length));
     });
 
-    test('最低1回はtransferが発生し、シャッフルとして機能する', () {
-      for (int seed = 0; seed < 10; seed++) {
+    test('transferは確率的に発生し、出現しない回・出現する回の両方があり得る', () {
+      // transferはmove/pause/cross/feintと同様に最低出現回数を保証しないため、
+      // 十分な数のシードを試したときに「一度も出ない」結果と「出る」結果の
+      // 両方が観測されることを確認する。
+      bool sawNoTransfer = false;
+      bool sawTransfer = false;
+      for (int seed = 0; seed < 50; seed++) {
         final ShuffleStepSequence sequence = builder.build(
           profile: _profileFor(1),
           random: Random(seed),
         );
 
-        expect(
-          sequence.steps.where((s) => s.type == ShuffleStepType.transfer).isNotEmpty,
-          isTrue,
-        );
+        if (sequence.steps.where((s) => s.type == ShuffleStepType.transfer).isEmpty) {
+          sawNoTransfer = true;
+        } else {
+          sawTransfer = true;
+        }
       }
+
+      expect(sawNoTransfer, isTrue);
+      expect(sawTransfer, isTrue);
     });
 
     test('finalHolderはinitialHolderと同じ場合も異なる場合もあり得る', () {
@@ -74,6 +83,26 @@ void main() {
           }
         }
       }
+    });
+
+    test('moveの出現頻度はtransferより高い', () {
+      int moveCount = 0;
+      int transferCount = 0;
+      for (int seed = 0; seed < 200; seed++) {
+        final ShuffleStepSequence sequence = builder.build(
+          profile: _profileFor(9),
+          random: Random(seed),
+        );
+        for (final ShuffleStep step in sequence.steps) {
+          if (step.type == ShuffleStepType.move) {
+            moveCount++;
+          } else if (step.type == ShuffleStepType.transfer) {
+            transferCount++;
+          }
+        }
+      }
+
+      expect(moveCount, greaterThan(transferCount));
     });
 
     test('保持手は常に1本であり、transfer以外の動作では保持手が変わらない', () {

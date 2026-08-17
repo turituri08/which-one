@@ -34,21 +34,21 @@ class DifficultyResolver {
       return const <ShuffleStepType>{ShuffleStepType.move, ShuffleStepType.transfer};
     }
     if (level <= 6) {
-      // Level 4〜6：上下・曲線・短い停止を加える帯。曲線・上下は`move`の
-      // パラメータで表現するため、動作プリミティブとしては`pause`のみ追加する。
+      // Level 4〜6：上下・曲線・短い停止に加え、交差も加える帯。
       return const <ShuffleStepType>{
         ShuffleStepType.move,
-        ShuffleStepType.pause,
         ShuffleStepType.transfer,
+        ShuffleStepType.cross,
+        ShuffleStepType.pause,
       };
     }
-    // Level 7以上：交差、横切り、緩急、見せかけの動きを加える帯。
+    // Level 7以上：横切り、緩急、見せかけの動きを加える帯（交差はLevel 4〜6から持ち越し）。
     return const <ShuffleStepType>{
       ShuffleStepType.move,
-      ShuffleStepType.pause,
-      ShuffleStepType.cross,
       ShuffleStepType.transfer,
+      ShuffleStepType.cross,
       ShuffleStepType.feint,
+      ShuffleStepType.pause,
     };
   }
 }

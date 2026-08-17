@@ -26,7 +26,7 @@ void main() {
       }
     });
 
-    test('不正系：transferが1回もない計画は無効', () {
+    test('正常系：transferが1回もない計画も有効（開始時の保持手がそのまま正解位置になる）', () {
       final ShufflePlan plan = ShufflePlan(
         seed: 1,
         initialHolder: _hand0,
@@ -41,7 +41,7 @@ void main() {
         finalHolder: _hand0,
       );
 
-      expect(validator.isValid(plan), isFalse);
+      expect(validator.isValid(plan), isTrue);
     });
 
     test('不正系：transferの当事者に現在の保持手が含まれない計画は無効', () {

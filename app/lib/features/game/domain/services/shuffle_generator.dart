@@ -33,10 +33,10 @@ class ShuffleGenerator {
   /// Level 1〜3向け：左右往復のみの生成戦略。
   final LeftRightStepSequenceBuilder leftRightBuilder;
 
-  /// Level 4以上向け：`pause`と緩急を加えた生成戦略。
+  /// Level 4〜6向け：`cross`・`pause`と緩急を加えた生成戦略（`feint`は含まない）。
   final PauseTempoStepSequenceBuilder pauseTempoBuilder;
 
-  /// Level 7以上向け：`cross`・`feint`を加えた生成戦略。
+  /// Level 7以上向け：`feint`を加えた生成戦略。
   final CrossFeintStepSequenceBuilder crossFeintBuilder;
 
   /// 生成した計画が最低限のゲームルールを満たしているかを検証するドメインサービス。
@@ -80,12 +80,12 @@ class ShuffleGenerator {
     required int seed,
     required Random random,
   }) {
-    // 難易度帯が広い順（cross > pause > 左右移動のみ）に判定する。
-    // Level 7以上はpauseも含むため、crossの判定を先に行う必要がある。
+    // feintはLevel 7〜9にしか存在しないため、その有無で最上位の帯を判定する。
+    // crossはLevel 4〜6にも含まれるため、crossの有無だけでは帯を一意に判定できない。
     final ShuffleStepSequence sequence;
-    if (profile.allowedMoves.contains(ShuffleStepType.cross)) {
+    if (profile.allowedMoves.contains(ShuffleStepType.feint)) {
       sequence = crossFeintBuilder.build(profile: profile, random: random);
-    } else if (profile.allowedMoves.contains(ShuffleStepType.pause)) {
+    } else if (profile.allowedMoves.contains(ShuffleStepType.cross)) {
       sequence = pauseTempoBuilder.build(profile: profile, random: random);
     } else {
       sequence = leftRightBuilder.build(profile: profile, random: random);

@@ -120,6 +120,7 @@ lib/
           shuffle/                        # 難易度帯ごとの生成戦略と共有ヘルパー
             left_right_step_sequence_builder.dart
             pause_tempo_step_sequence_builder.dart
+            cross_feint_step_sequence_builder.dart
         value_objects/
       application/
         use_cases/

@@ -62,7 +62,7 @@ void main() {
       }
     });
 
-    test('Level 4以上はPauseTempoStepSequenceBuilderの結果とそのまま一致する（委譲の確認）', () {
+    test('Level 4〜6はPauseTempoStepSequenceBuilderの結果とそのまま一致する（委譲の確認）', () {
       const PauseTempoStepSequenceBuilder pauseTempoBuilder = PauseTempoStepSequenceBuilder();
 
       for (final int level in <int>[4, 5, 6]) {
@@ -104,15 +104,29 @@ void main() {
       }
     });
 
-    test('Level 4〜6の生成にはcross/feintが含まれない（difficulty帯の切り替わり確認）', () {
+    test('Level 4〜6の生成にはfeintが含まれない（difficulty帯の切り替わり確認）', () {
       for (final int level in <int>[4, 5, 6]) {
         for (int seed = 0; seed < 20; seed++) {
           final ShufflePlan plan = generator.planFor(level: level, seed: seed);
 
-          expect(plan.steps.where((s) => s.type == ShuffleStepType.cross).isEmpty, isTrue);
           expect(plan.steps.where((s) => s.type == ShuffleStepType.feint).isEmpty, isTrue);
         }
       }
+    });
+
+    test('Level 4〜6の生成ではcrossが出現し得る（確率的な出現の確認）', () {
+      bool sawCross = false;
+      for (final int level in <int>[4, 5, 6]) {
+        for (int seed = 0; seed < 50; seed++) {
+          final ShufflePlan plan = generator.planFor(level: level, seed: seed);
+
+          if (plan.steps.where((s) => s.type == ShuffleStepType.cross).isNotEmpty) {
+            sawCross = true;
+          }
+        }
+      }
+
+      expect(sawCross, isTrue);
     });
 
     test('Level 7以上の生成ではcross/feintが出現し得る（確率的な出現の確認）', () {

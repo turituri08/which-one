@@ -33,26 +33,15 @@ void main() {
       expect(a.steps.length, equals(b.steps.length));
     });
 
-    test('transferは最低1回含まれる（コインが実際に移動しないとシャッフルが成立しないため）', () {
-      for (final int level in <int>[7, 8, 9]) {
-        for (int seed = 0; seed < 20; seed++) {
-          final ShuffleStepSequence sequence = builder.build(
-            profile: _profileFor(level),
-            random: Random(seed),
-          );
-
-          expect(sequence.steps.where((s) => s.type == ShuffleStepType.transfer).isNotEmpty, isTrue);
-        }
-      }
-    });
-
-    test('cross・feintは確率的に発生し、出現しないケース・出現するケースの両方があり得る', () {
-      // cross・feintはpauseと同様に最低出現回数を保証しないため、十分な数の
-      // シードを試したときに「一度も出ない」結果と「出る」結果の両方が観測されることを確認する。
+    test('cross・feint・transferは確率的に発生し、出現しないケース・出現するケースの両方があり得る', () {
+      // いずれも最低出現回数を保証しないため、十分な数のシードを試したときに
+      // 「一度も出ない」結果と「出る」結果の両方が観測されることを確認する。
       bool sawNoCross = false;
       bool sawCross = false;
       bool sawNoFeint = false;
       bool sawFeint = false;
+      bool sawNoTransfer = false;
+      bool sawTransfer = false;
       for (int seed = 0; seed < 50; seed++) {
         final ShuffleStepSequence sequence = builder.build(
           profile: _profileFor(7),
@@ -69,12 +58,19 @@ void main() {
         } else {
           sawFeint = true;
         }
+        if (sequence.steps.where((s) => s.type == ShuffleStepType.transfer).isEmpty) {
+          sawNoTransfer = true;
+        } else {
+          sawTransfer = true;
+        }
       }
 
       expect(sawNoCross, isTrue);
       expect(sawCross, isTrue);
       expect(sawNoFeint, isTrue);
       expect(sawFeint, isTrue);
+      expect(sawNoTransfer, isTrue);
+      expect(sawTransfer, isTrue);
     });
 
     test('往復回数が多いレベルほど、cross・feintが複数回発生し得る', () {
@@ -167,6 +163,34 @@ void main() {
           }
         }
       }
+    });
+
+    test('主動作の出現頻度はmove > transfer > cross > feint > pauseの順になる', () {
+      // 統計的な傾向の確認であり、個々のシードのばらつきを吸収するため
+      // 十分に多いレベル・シード数で集計する。
+      final Map<ShuffleStepType, int> counts = <ShuffleStepType, int>{
+        ShuffleStepType.move: 0,
+        ShuffleStepType.transfer: 0,
+        ShuffleStepType.cross: 0,
+        ShuffleStepType.feint: 0,
+        ShuffleStepType.pause: 0,
+      };
+      for (int seed = 0; seed < 300; seed++) {
+        final ShuffleStepSequence sequence = builder.build(
+          profile: _profileFor(9),
+          random: Random(seed),
+        );
+        for (final ShuffleStep step in sequence.steps) {
+          if (counts.containsKey(step.type)) {
+            counts[step.type] = counts[step.type]! + 1;
+          }
+        }
+      }
+
+      expect(counts[ShuffleStepType.move]!, greaterThan(counts[ShuffleStepType.transfer]!));
+      expect(counts[ShuffleStepType.transfer]!, greaterThan(counts[ShuffleStepType.cross]!));
+      expect(counts[ShuffleStepType.cross]!, greaterThan(counts[ShuffleStepType.feint]!));
+      expect(counts[ShuffleStepType.feint]!, greaterThan(counts[ShuffleStepType.pause]!));
     });
 
     test('タイムラインは単調増加する', () {

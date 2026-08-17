@@ -15,7 +15,7 @@
 - `DifficultyProfile`と`DifficultyResolver`の実装（レベル→難易度パラメータの解決）
 - `ShuffleGenerator`の実装（`LevelShufflePlanner`を置き換え、シード付きで再現可能な生成を維持）
 - `move`、`pause`、`cross`、`transfer`、`feint`の動作プリミティブを実際に使った生成ロジック
-- Level 1〜3（左右移動）、Level 4〜6（上下・曲線・停止を追加）、Level 7〜9（交差・緩急・フェイントを追加）の難易度帯実装
+- Level 1〜3（左右移動）、Level 4〜6（上下・曲線・停止・交差を追加）、Level 7〜9（緩急・フェイントを追加）の難易度帯実装
 - `ShuffleValidator`による公平性検証と、検証失敗時の別シードでの再生成
 - 受け渡し・フェイントを視覚的に区別できるようにする、簡易描画（`CustomPainter`）の拡張
 - プレイテストの実施と記録
@@ -35,7 +35,7 @@
 - 依存方向は `View -> ViewModel -> UseCase -> Domain Service / Repository / Core Service` を厳守する。
 - ゲームルール（シャッフル生成、公平性検証、難易度解決）は`features/game/domain/`に置く。
 - 検証運用はADR 0002に従い、コミット単位では最小検証、Phase完了時にフル検証（`dart format .`、`flutter analyze`、`flutter test`）を実施する。
-- **難易度帯（GDD 6.2が基準）**：Level 1〜3は演者1人・手2本の左右移動、Level 4〜6は同じ構成に上下・曲線・停止を追加、Level 7〜9は交差・横切り・緩急・フェイントを追加する。Phase 2ではLevel 10以降の複数演者化は扱わない（`performerCount`は本Phase内では常に1）。
+- **難易度帯（GDD 6.2が基準）**：Level 1〜3は演者1人・手2本の左右移動、Level 4〜6は同じ構成に上下・曲線・停止・交差を追加、Level 7〜9は横切り・緩急・フェイントを追加する（Commit 7.2でユーザーと相談し、交差の解禁をLevel 7〜9からLevel 4〜6へ前倒し）。Phase 2ではLevel 10以降の複数演者化は扱わない（`performerCount`は本Phase内では常に1）。
 - **数値パラメータ**：`pause`の長さ、緩急の速度比、`feint`の発生確率などはPhase 1と同様に本Phaseでは確定しない。実装時は暫定値を置いて仮実装し、Roadmap 10章の方針に従い後続のプレイテストで調整する。
 - 既存の`LevelShufflePlanner`は`ShuffleGenerator`へ置き換え、呼び出し元（`StartChallengeUseCase`、`SubmitAnswerUseCase`）を更新する。
 
@@ -120,7 +120,7 @@
 
 ### Commit 6 — ShuffleValidatorと再生成
 
-- [x] `ShuffleValidator`を実装し、保持手一意性、`transfer`以外での保持手不変、最低1回の`transfer`を検証する。
+- [x] `ShuffleValidator`を実装し、保持手一意性、`transfer`以外での保持手不変を検証する（`transfer`は他の動作種別と同様に確率で発生するものとし、最低出現回数は検証しない。Commit 7時点でユーザーと確認済み）。
 - [x] `ShuffleGenerator`が`ShuffleValidator`の検証に失敗した場合、別シードで再生成する（無限ループを防ぐ上限回数を設ける）。
 - 対象ファイル：
   - `app/lib/features/game/domain/services/shuffle_validator.dart`
@@ -134,7 +134,7 @@
 
 ### Commit 7 — 受け渡し・フェイントの視覚的手掛かり
 
-- [ ] `HandsPainter`/`HandsView`を拡張し、`ShufflePlan`の経過時間に応じて手の位置を変化させる（`move`/`pause`/`cross`/`transfer`/`feint`が視覚的に区別できるようにする）。Rive導入前の簡易表現（円のプレースホルダー）のままとする。
+- [x] `HandsPainter`/`HandsView`を拡張し、`ShufflePlan`の経過時間に応じて手の位置を変化させる（`move`/`pause`/`cross`/`transfer`/`feint`が視覚的に区別できるようにする）。Rive導入前の簡易表現（円のプレースホルダー）のままとする。
 - 対象ファイル：
   - `app/lib/features/game/presentation/painters/hands_painter.dart`
   - `app/lib/features/game/presentation/widgets/hands_view.dart`
@@ -180,3 +180,6 @@
 | 5.1 | レビュー指摘を受け、cross・feintが往復回数によらず常にちょうど1回になっていた問題を修正。cross用・feint用に1往復ずつ確定的に確保する仕組みは維持しつつ、`transfer`に選ばれなかった残りの往復に対して`crossProbability`/`feintProbability`（既定0.25）による追加出現を組み込み、往復回数（＝レベル）が多いほどcross・feintの出現回数も増えるようにした。テストを「ちょうど1回」から「最低1回」の検証へ修正し、高レベル・多シードで2回以上出現するケースが実在することを確認するテストを追加。 | `flutter test` 全67件成功、`flutter analyze` 指摘なし |
 | 5.2 | ユーザーと相談し、「シャッフルとして成立するにはtransferの発生が必須だが、pause・cross・feintは演出であり出現しない回があってもよい」という方針で合意（GDD 6.1「各レベルは新しい難しさを追加する」原則との整合は、緩急・往復数増加が常に効くため許容範囲と判断）。`PauseTempoStepSequenceBuilder`の`pause`と`CrossFeintStepSequenceBuilder`の`cross`/`feint`から「最低1回保証」の仕組み（`ensureAtLeastOneTrue`によるpause強制、cross/feintの確定枠予約、往復回数3回未満の`ArgumentError`ガード）をすべて削除し、`transfer`のみ引き続き最低1回を保証する形に単純化。`CrossFeintStepSequenceBuilder`は`PauseTempoStepSequenceBuilder`とほぼ同型の「1往復ごとに独立した確率で主動作を決める」ロジックになった。テストを「最低1回含まれる」から「出現しない計画・出現する計画の両方が観測される」という確率的な検証へ全面的に修正し、Commit 3・5の検証項目・完了条件も計画書上でこの仕様に合わせて更新した。 | `flutter test` 全67件成功、`flutter analyze` 指摘なし |
 | 6 | `ShuffleValidator`を新規実装。検証項目は計画通り3点（最低1回のtransfer、transfer以外での保持手不変、transferの連鎖とfinalHolderの整合）に絞り、正解位置の偏りやフェイント量など他のGDD 7.4項目はPhase 2対象外のまま追加しないことをユーザーと確認。実装前に「Validatorが不正と判定する状況が現在のコードで実際に起こり得るか」を相談し、現行の生成戦略では発生し得ないが、tdd.md 5.3のパイプライン設計とPhase 5（複数演者化）以降の安全網として実装する方針で合意。`ShuffleGenerator`に検証・再生成ループを追加（同一`Random`インスタンスから引き続けることで(level, seed)ごとの再現性を維持）。上限到達時は`StateError`を投げる方針とし、上限回数は5回（実運用では到達しない想定）。過度に厳格な検証やコード複雑化を避けるよう指示を受け、チェック項目を最小限に留めた。テストは`ShuffleValidator`の正常系・不正系3パターンと、`ShuffleValidator`をテスト用にサブクラス化したフェイクによる再生成成功・再現性・上限到達時の`StateError`を追加。 | `flutter test` 全74件成功、`flutter analyze` 指摘なし |
+| 7 | 初回実装（接触線での手掛かり表現、コイン可視化の検討）はユーザーとの相談の結果すべて取り消し。vision.md/gdd.mdは「コインは隠し、手の動きから保持手を推理する」という既存設計のままで正しいことを確認（ドキュメント変更なし）。ハンターハンター作中のコイン当てゲームを参考に、具体的な動きの仕様を相談して確定：`move`は自分の位置付近で小さくバウンス、`pause`は静止、`cross`は自分→相手→自分の位置と1step内で完結する往復、`transfer`は同じ往復だが相手側で重なった瞬間に0.2〜0.3秒（stepの尺が短い場合は所要時間の半分を上限に自動的に切り詰め）静止してから戻る、`feint`はcrossと同じ軌道だが重なる手前（到達率0.7）で引き返す。線による手掛かりは撤廃し、動きそのものを手掛かりとする方針に変更（GDD 7.2）。手の画面上の位置は常に固定（`stagePositionFor`）とし、累積的な位置入れ替えは持たない自己完結型のアニメーションにした。あわせて、生成頻度が`move > cross > feint > transfer`になるようユーザーと合意し、`LeftRightStepSequenceBuilder`/`PauseTempoStepSequenceBuilder`/`CrossFeintStepSequenceBuilder`のtransfer抽選を単純な50%から`transferProbability`（既定0.2、CrossFeintBuilderは0.08）による確率抽選へ変更、`pauseProbability`も0.35→0.15へ引き下げ。`HandsView`は`StatefulWidget`化して`AnimationController`でシャッフル中の経過時間を管理（`GameUiState`は変更しない）。前回発生した「レベルが進むたびに新しいAnimationControllerを作るとSingleTickerProviderStateMixinでは足りない」という不具合を踏まえ、最初から`TickerProviderStateMixin`を採用。テストは各builderに頻度順序の統計的検証を追加し、`hands_view_test.dart`でクラッシュしないこと・`elapsed`が経過時間に応じて更新されること・複数レベルにまたがってもTickerの作り直しでクラッシュしないことを確認。 | `flutter test` 全82件成功、`flutter analyze` 指摘なし |
+| 7.1 | 動作確認を受けたユーザーからの3点のフィードバックを反映。(1) `transfer`の最低1回保証を撤廃し、`pause`/`cross`/`feint`と同じ単純な確率抽選に統一（`ensureAtLeastOneTrue`を使う箇所がなくなったため`shuffle_random_choices.dart`を削除）。`ShuffleValidator`からも「最低1回のtransfer」の検証を外し、Commit 6の検証項目を計画書上で修正（transfer 0回の計画も有効）。(2) `move`の見た目を、GDDの「直線、曲線、円弧、上下移動」という定義幅により近づけるため、上下バウンスに加えて小さな左右のドリフトを組み合わせた弧を描く動きに拡張。(3) `cross`/`transfer`で入れ替わった左右の位置は、1step内で自分の位置へ戻るのではなく、次にcross/transferが起きるまで（または`shuffling`フェーズが終わるまで）複数stepにまたがって持続する仕様に修正（`HandsPainter`にstepインデックスを渡し、それ以前のcross/transfer回数の偶奇から「今どちら側にいるか」を都度計算する方式にした）。`transfer`の接触点も「相手側で静止」から「中間地点で静止してから相手側へ完了する」に変更。`shuffling`フェーズが終われば`plan`がnullになり自動的に基準位置表示へ戻るため、「レベルが終われば元に戻る」は従来通り満たされる。 | `flutter test` 全82件成功、`flutter analyze` 指摘なし |
+| 7.2 | ユーザーからの難易度帯・出現頻度の仕様変更依頼を受け、ドキュメントと実装の両方を更新。**難易度帯構成の変更**：Level 4〜6に`cross`を追加（従来はLevel 7〜9でのみ解禁）。`gdd.md` 6.2の難易度帯表と、本計画書の「対象範囲」「前提・依存関係」を合わせて修正。`DifficultyResolver`のLevel 4〜6判定に`cross`を追加し、`ShuffleGenerator`の帯判定を「`cross`の有無」から「`feint`の有無」（Level 7〜9にしか存在しない）へ変更（`cross`だけではLevel 4〜6と7〜9を判別できなくなったため）。**出現頻度順序の変更**：全帯で`move > transfer > cross > feint > pause`の順に統一（従来は`move > cross > feint > transfer`で`transfer`が最も低頻度だったが、`transfer`を高頻度側へ変更）。`pause`も他の動作と同じ「往復の主動作を1つ選ぶ」抽選に統合し、独立した「往復の前に挿入する」方式（`pausesBeforeRepetition`、固定`pauseDuration`）を廃止（`pause`が選ばれた往復は、その往復の尺全体が静止になる）。`PauseTempoStepSequenceBuilder`は`cross`対応と統合抽選に合わせて全面的に書き直したが、クラス名・ファイル名は変更していない（`cross`を扱うようになった点でやや実態と乖離するが、リネームによる差分拡大を避けた。必要であれば別途リネームを検討する）。`CrossFeintStepSequenceBuilder`も同様に`pause`を統合抽選へ組み込んだ。`HandsPainter`は`ShuffleStepType`ごとに描画を分岐するだけで、生成元がどのbuilderかを問わないため無変更。テストは`DifficultyResolver`のband境界（cross:Level3/4、feint:Level6/7）、各builderの新しい頻度順序、`ShuffleGenerator`のband切り替わりを更新。 | `flutter test` 全82件成功、`flutter analyze` 指摘なし |

@@ -17,7 +17,7 @@ void main() {
       }
     });
 
-    test('Level 4〜6はpauseが加わる', () {
+    test('Level 4〜6はcross・pauseが加わる', () {
       for (final int level in <int>[4, 5, 6]) {
         final profile = resolver.resolve(level);
 
@@ -25,14 +25,15 @@ void main() {
           profile.allowedMoves,
           equals(<ShuffleStepType>{
             ShuffleStepType.move,
-            ShuffleStepType.pause,
             ShuffleStepType.transfer,
+            ShuffleStepType.cross,
+            ShuffleStepType.pause,
           }),
         );
       }
     });
 
-    test('Level 7〜9はcrossとfeintが加わる', () {
+    test('Level 7〜9はfeintが加わる', () {
       for (final int level in <int>[7, 8, 9]) {
         final profile = resolver.resolve(level);
 
@@ -54,15 +55,17 @@ void main() {
       final level4 = resolver.resolve(4);
 
       expect(level3.allowedMoves.contains(ShuffleStepType.pause), isFalse);
+      expect(level3.allowedMoves.contains(ShuffleStepType.cross), isFalse);
       expect(level4.allowedMoves.contains(ShuffleStepType.pause), isTrue);
+      expect(level4.allowedMoves.contains(ShuffleStepType.cross), isTrue);
     });
 
     test('Level 6と7の境界でallowedMovesが切り替わる', () {
       final level6 = resolver.resolve(6);
       final level7 = resolver.resolve(7);
 
-      expect(level6.allowedMoves.contains(ShuffleStepType.cross), isFalse);
-      expect(level7.allowedMoves.contains(ShuffleStepType.cross), isTrue);
+      expect(level6.allowedMoves.contains(ShuffleStepType.feint), isFalse);
+      expect(level7.allowedMoves.contains(ShuffleStepType.feint), isTrue);
     });
 
     test('Level 10以上はLevel 7〜9と同じallowedMovesを暫定的に返す', () {
