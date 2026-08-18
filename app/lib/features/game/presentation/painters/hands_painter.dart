@@ -201,7 +201,12 @@ class HandsPainter extends CustomPainter {
   }
 
   /// `transfer`の3段階（接近・接触点で静止・完了）の位置を、実時間に沿って求める。
-  Offset _transferPosition(ShuffleStep step, Duration elapsedInStep, Offset before, Offset otherBefore) {
+  Offset _transferPosition(
+    ShuffleStep step,
+    Duration elapsedInStep,
+    Offset before,
+    Offset otherBefore,
+  ) {
     final Offset contactPoint = Offset.lerp(before, otherBefore, 0.5)!;
 
     // stepが短い場合に静止時間だけで使い切ってしまわないよう、
@@ -228,7 +233,8 @@ class HandsPainter extends CustomPainter {
   /// 0→1→0（往復）の三角波。`progress`が0.5のとき最大値1.0になる。
   double _pingPong(double progress) => 1 - (progress * 2 - 1).abs();
 
-  double _progress(ShuffleStep step, Duration elapsedInStep) => _ratio(elapsedInStep, step.duration);
+  double _progress(ShuffleStep step, Duration elapsedInStep) =>
+      _ratio(elapsedInStep, step.duration);
 
   double _ratio(Duration elapsed, Duration total) {
     if (total <= Duration.zero) {

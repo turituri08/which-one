@@ -11,7 +11,11 @@ const ShuffleGenerator _generator = ShuffleGenerator();
 
 Future<void> _pumpHandsView(WidgetTester tester, GameUiState state) {
   return tester.pumpWidget(
-    MaterialApp(home: Scaffold(body: HandsView(state: state, onHandTap: (_) {}))),
+    MaterialApp(
+      home: Scaffold(
+        body: HandsView(state: state, onHandTap: (_) {}),
+      ),
+    ),
   );
 }
 
@@ -29,9 +33,7 @@ HandsPainter _findHandsPainter(WidgetTester tester) {
 
 void main() {
   group('HandsView', () {
-    testWidgets('shuffling中でもクラッシュせず描画できる（Level 4：pause・緩急を含む）', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('shuffling中でもクラッシュせず描画できる（Level 4：pause・緩急を含む）', (WidgetTester tester) async {
       final ShufflePlan plan = _generator.planFor(level: 4, seed: 1);
       final GameUiState state = GameUiState(phase: GamePhase.shuffling, level: 4, plan: plan);
 
@@ -89,10 +91,7 @@ void main() {
     testWidgets('shuffling終了直後は、基準位置へ0.5秒かけて滑らかに戻る', (WidgetTester tester) async {
       final ShufflePlan plan = _generator.planFor(level: 1, seed: 1);
 
-      await _pumpHandsView(
-        tester,
-        GameUiState(phase: GamePhase.shuffling, level: 1, plan: plan),
-      );
+      await _pumpHandsView(tester, GameUiState(phase: GamePhase.shuffling, level: 1, plan: plan));
       await tester.pump(plan.totalDuration);
 
       // シャッフル終了。answeringへ遷移した直後は、直前のplanを保持したまま

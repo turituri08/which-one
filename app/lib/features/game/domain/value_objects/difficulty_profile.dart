@@ -34,11 +34,7 @@ class DifficultyProfile {
       _setEquals(other.allowedMoves, allowedMoves);
 
   @override
-  int get hashCode => Object.hash(
-    level,
-    performerCount,
-    Object.hashAllUnordered(allowedMoves),
-  );
+  int get hashCode => Object.hash(level, performerCount, Object.hashAllUnordered(allowedMoves));
 
   @override
   String toString() =>

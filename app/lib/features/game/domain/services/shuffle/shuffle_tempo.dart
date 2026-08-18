@@ -9,7 +9,11 @@ const int _minStepMillis = 200;
 /// 一律に速くするのではなく、往復ごとに速い・遅いを混在させることで
 /// 「速さだけに依存しない難易度」（緩急）を表現する。値は暫定であり、
 /// プレイテストで調整する。
-Duration tempoVariedDuration({required Duration base, required double ratio, required Random random}) {
+Duration tempoVariedDuration({
+  required Duration base,
+  required double ratio,
+  required Random random,
+}) {
   final double variation = (random.nextDouble() * 2 - 1) * ratio;
   final int variedMillis = (base.inMilliseconds * (1 + variation)).round();
   return Duration(milliseconds: max(variedMillis, _minStepMillis));

@@ -147,8 +147,8 @@
 
 ### Commit 8 — プレイテストとPhase 2完了ゲート
 
-- [ ] プレイテストを実施し、正答率・見失う理由・再挑戦意欲を記録する。
-- [ ] Phase 2のフル検証（`dart format .`、`flutter analyze`、`flutter test`）を実行する。
+- [ ] プレイテストを実施し、正答率・見失う理由・再挑戦意欲を記録する。（ユーザーが実機/シミュレータで実施し、結果を共有予定）
+- [x] Phase 2のフル検証（`dart format .`、`flutter analyze`、`flutter test`）を実行する。
 - [ ] 計画書のチェックボックスと実施記録を更新できる状態にする。
 - 対象ファイル：
   - `.github/docs/implementation-plans/phase-2-shuffle-ai-difficulty.md`
@@ -186,4 +186,5 @@
 | 7.3 | `PauseTempoStepSequenceBuilder`が`cross`も扱うようになった実態に合わせ、`CrossPauseStepSequenceBuilder`へリネーム（`pause_tempo_step_sequence_builder.dart`→`cross_pause_step_sequence_builder.dart`）。ロジック変更はなく、クラス名・ファイル名・`ShuffleGenerator`のフィールド名（`pauseTempoBuilder`→`crossPauseBuilder`）・関連テスト・`tdd.md`・ADR 0006の例示のみを更新。7.2の内容とは無関係な純粋なリファクタのため、別コミットとして分離した（7.2はCommit Aとして先にコミット済み、本リネームはCommit Bとして提案）。 | `flutter test` 全82件成功、`flutter analyze` 指摘なし |
 | 7.4 | 動作確認したユーザーから、線を撤廃したtransfer/crossは改善したが、`move`が「小さく円を描いて自分の位置に戻るだけ」で意味のない動きに見えるとの指摘を受けた。`move`も`cross`/`transfer`と同様に位置を持続させ、画面全体を使って大きく動くように変更（`shuffling`が終われば`plan`がnullになり自動的に基準位置へ戻る既存の仕組みは変更不要で、「回答を求める瞬間に元の位置へ戻る」という要望をそのまま満たす）。実装は、`cross`/`transfer`の偶奇カウント方式だった位置管理を、2手それぞれの持続する位置（pos0/pos1）を履歴から都度再計算する方式へ一般化し、`move`もこの持続する位置を更新できるようにした（`move`の移動先は`plan.seed`とstep・手のインデックスから決める再現可能な疑似乱数）。`cross`/`transfer`は「2手の位置を入れ替える」処理に単純化された（従来の左右2固定スロットのswap判定は不要になった）。テストは既存のクラッシュ確認・elapsed確認・複数レベルにまたがる確認を再実行し、全て緑であることを確認（位置計算そのものを直接検証するテストは追加していない。手動でのシミュレータ確認を推奨）。 | `flutter test` 全82件成功、`flutter analyze` 指摘なし |
 | 7.5 | 動作確認したユーザーから、`shuffling`終了時に手がパッと基準位置へ瞬間移動し、保持手を追えなくなるとの指摘を受けた。`shuffling`→`answering`遷移直後に、直前の位置から基準位置へ0.5秒かけて滑らかに戻る演出を追加。`HandsPainter`に`returnProgress`（0.0〜1.0）を追加し、シャッフル中の位置から`stagePositionFor`へ`Offset.lerp`で寄せるようにした。あわせて、`activeStepIndex`がnull（シャッフルの尺を過ぎた状態）のときに持続していた位置を無視して基準位置へ即座にフォールバックしていた既存のバグも修正（`_positionsBeforeStep`を全step数で呼ぶよう変更）。`HandsView`に2つ目の`AnimationController`（`_returnController`、0.5秒、`Curves.easeOut`）を追加し、shuffling終了を検知した時点で開始、完了したら自動的に破棄してplan=nullフォールバックへ戻す。テストに戻りアニメーションの進捗（0→中間→1で完了しplanがnullに戻る）を検証するケースを追加。 | `flutter test` 全83件成功、`flutter analyze` 指摘なし |
-| 7.6 | 動作確認したユーザーから好意的な評価を得た（細かな調整は後続Phaseで実施）。あわせて、左右の手が両方とも白丸で見分けがつかず、`move`で自由に動き回るようになったことで不必要に難しくなっているとの指摘を受け、デバッグ用に縁の色でhand0/hand1を区別できるようにした（hand0=青、hand1=赤）。ゲームルール・保持手の判定には一切影響しない純粋な描画上の変更（本番の見た目はPhase 3のRive導入時に作り直す前提）。コメント・書式に近い小さな変更のためフルテストは省略し、`hands_view_test.dart`のみ再実行して緑であることを確認。 | `flutter test`（`hands_view_test.dart`）全6件成功、`flutter analyze` 指摘なし |
+| 7.6 | 動作確認したユーザーから好意的な評価を得た（細かな調整は後続Phaseで実施）。あわせて、左右の手が両方とも白丸で見分けがつかず、`move`で自由に動き回るようになったことで不必要に難しくなっているとの指摘を受け、デバッグ用に縁の色でhand0/hand1を区別できるようにした（hand0=青、hand1=赤）。ゲームルール・保持手の判定には一切影響しない純粋な描画上の変更（本番の見た目はPhase 3のRive導入時に作り直す前提）。コメント・書式に近い小さな変更のためフルテストは省略し、`hands_view_test.dart`のみ再実行して緑であることを確認。Phase 3着手時に手の識別性を確保すべきという点を`roadmap.md`のPhase 3タスクへ記録。 | `flutter test`（`hands_view_test.dart`）全6件成功、`flutter analyze` 指摘なし |
+| 8 | Phase 2のフル検証を実行。`dart format .`で書式のみ4ファイルを整形（`shuffle_tempo.dart`/`difficulty_profile.dart`/`hands_painter.dart`/`hands_view_test.dart`、ロジック変更なし）、`flutter analyze`・`flutter test`とも問題なし。プレイテスト（正答率・見失う理由・再挑戦意欲の記録）は、実際にプレイして観察する必要がありAIが代行・捏造できないため、ユーザーが実機/シミュレータで実施し結果を共有する運用とすることを確認。結果が揃い次第、本Commitの残りのチェックボックスとPhase 2完了ゲートの判定を行う。 | `dart format .` 4ファイル整形、`flutter analyze` 指摘なし、`flutter test` 全83件成功（プレイテストは未実施） |
