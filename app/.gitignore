@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# dart-define用のローカル値ファイル（秘匿値を含み得るためコミットしない）。
+# テンプレートのdart_defines/local.example.jsonはコミット対象。
+/dart_defines/local.json

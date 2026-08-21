@@ -115,8 +115,12 @@ lib/
         entities/
         services/
           difficulty_resolver.dart
-          shuffle_generator.dart
+          shuffle_generator.dart          # 難易度帯に応じた生成戦略の選択と組み立てのみを担う
           shuffle_validator.dart
+          shuffle/                        # 難易度帯ごとの生成戦略と共有ヘルパー
+            left_right_step_sequence_builder.dart
+            cross_pause_step_sequence_builder.dart
+            cross_feint_step_sequence_builder.dart
         value_objects/
       application/
         use_cases/

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/answer_result.dart';
 import '../../domain/entities/challenge_session.dart';
 import '../../domain/services/answer_judge.dart';
-import '../../domain/services/level_shuffle_planner.dart';
+import '../../domain/services/shuffle_generator.dart';
 import '../../domain/value_objects/game_phase.dart';
 import '../../domain/value_objects/hand_id.dart';
 
@@ -18,7 +18,7 @@ final Provider<SubmitAnswerUseCase> submitAnswerUseCaseProvider = Provider<Submi
 class SubmitAnswerUseCase {
   SubmitAnswerUseCase({
     this.judge = const AnswerJudge(),
-    this.planner = const LevelShufflePlanner(),
+    this.generator = const ShuffleGenerator(),
     Random? random,
   }) : _random = random ?? Random();
 
@@ -26,7 +26,7 @@ class SubmitAnswerUseCase {
   final AnswerJudge judge;
 
   /// 正解時に次レベルのシャッフル計画を生成するために使うドメインサービス。
-  final LevelShufflePlanner planner;
+  final ShuffleGenerator generator;
 
   final Random _random;
 
@@ -57,7 +57,7 @@ class SubmitAnswerUseCase {
       session: session.copyWith(
         level: nextLevel,
         highestLevel: nextHighestLevel,
-        plan: planner.planFor(level: nextLevel, seed: seed),
+        plan: generator.planFor(level: nextLevel, seed: seed),
         phase: GamePhase.correct,
       ),
       result: result,
