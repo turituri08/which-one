@@ -24,6 +24,7 @@ class HandsPainter extends CustomPainter {
     this.plan,
     this.elapsed = Duration.zero,
     this.returnProgress = 0.0,
+    this.level = 1,
   });
 
   /// コインを保持している手のindex（0または1）。表示しない場合はnull。
@@ -48,23 +49,31 @@ class HandsPainter extends CustomPainter {
   /// 基準位置）。`shuffling`フェーズ中は常に0.0を渡す。
   final double returnProgress;
 
+  /// 現在のレベル。`transfer`の静止時間をレベルに応じて短くするために使う。
+  final int level;
+
   static const double radiusRatio = 0.12;
 
   // moveで手が移動できるステージ範囲（画面端に寄りすぎないよう余白を持たせる）。
   // cross/transfer/feintの往復（2手の位置を結ぶ軌道）とは別に、画面全体を
   // 使って大きく動かすことで「意味のある動き」に見えるようにする。
+  // 縦画面であることを踏まえ、縦方向はより広い範囲を使う
+  // （プレイテストで「縦の幅をもっと使ってよい」との指摘を受けた）。
   static const double _moveMinX = 0.12;
   static const double _moveMaxX = 0.88;
-  static const double _moveMinY = 0.15;
-  static const double _moveMaxY = 0.85;
+  static const double _moveMinY = 0.08;
+  static const double _moveMaxY = 0.92;
 
   // feintが相手側へ近づく際の到達率（1.0で完全に重なる）。
   // 「重なる直前で引き返す」ことを表すため1.0未満にする。
   static const double _feintReachRatio = 0.7;
 
-  // transferが中間地点（接触点）で静止する時間。「コインを渡している」ことを
-  // 示す間。stepの所要時間が短い場合はこの値より短く自動的に切り詰められる。
-  static const Duration _transferHoldDuration = Duration(milliseconds: 250);
+  // transferが中間地点（接触点）で静止する時間の範囲。レベルが上がるほど
+  // 短くする（プレイテストで「静止した回数を数えるだけで正解できてしまう」
+  // との指摘を受けた対応。手が2本のうちは根本的な解決にならないが、
+  // 複数演者化するPhase 5までの緩和策として短縮する）。
+  static const Duration _transferHoldDurationAtLevel1 = Duration(milliseconds: 300);
+  static const Duration _transferHoldDurationAtLevel9Plus = Duration(milliseconds: 120);
 
   /// 手indexに対応する正規化ステージ座標（0.0〜1.0）。
   ///
@@ -200,6 +209,18 @@ class HandsPainter extends CustomPainter {
     return Offset(x, y);
   }
 
+  /// `level`に応じた`transfer`の静止時間。Level 1で最も長く、Level 9以上で
+  /// 最も短くなるよう線形に補間する（暫定値、プレイテストで調整する）。
+  Duration _transferHoldDurationFor(int level) {
+    final double t = ((level - 1) / 8).clamp(0.0, 1.0);
+    final double millis =
+        _transferHoldDurationAtLevel1.inMilliseconds +
+        (_transferHoldDurationAtLevel9Plus.inMilliseconds -
+                _transferHoldDurationAtLevel1.inMilliseconds) *
+            t;
+    return Duration(milliseconds: millis.round());
+  }
+
   /// `transfer`の3段階（接近・接触点で静止・完了）の位置を、実時間に沿って求める。
   Offset _transferPosition(
     ShuffleStep step,
@@ -212,7 +233,7 @@ class HandsPainter extends CustomPainter {
     // stepが短い場合に静止時間だけで使い切ってしまわないよう、
     // stepの所要時間の半分を上限にして切り詰める。
     final int cappedHoldMicros = min(
-      _transferHoldDuration.inMicroseconds,
+      _transferHoldDurationFor(level).inMicroseconds,
       step.duration.inMicroseconds ~/ 2,
     );
     final Duration cappedHold = Duration(microseconds: cappedHoldMicros);
@@ -262,5 +283,6 @@ class HandsPainter extends CustomPainter {
       oldDelegate.coinHolderHandIndex != coinHolderHandIndex ||
       oldDelegate.plan != plan ||
       oldDelegate.elapsed != elapsed ||
-      oldDelegate.returnProgress != returnProgress;
+      oldDelegate.returnProgress != returnProgress ||
+      oldDelegate.level != level;
 }

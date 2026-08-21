@@ -17,16 +17,20 @@ import 'shuffle_tempo.dart';
 /// 契約は`LeftRightStepSequenceBuilder`と変わらない。
 class CrossPauseStepSequenceBuilder {
   const CrossPauseStepSequenceBuilder({
-    this.baseRepetitions = 2,
+    this.baseRepetitions = 5,
     this.repetitionIncrementPerLevel = 1,
     this.repetitionDuration = const Duration(milliseconds: 600),
-    this.tempoVariationRatio = 0.4,
+    this.tempoVariationRatio = 0.25,
     this.transferProbability = 0.3,
     this.crossProbability = 0.15,
     this.pauseProbability = 0.08,
   });
 
-  /// Level 1での左右往復回数。
+  /// 往復回数の計算式`baseRepetitions + (level - 1) * repetitionIncrementPerLevel`
+  /// における基準値。この戦略はLevel 4以上にしか使われないため、
+  /// `LeftRightStepSequenceBuilder`（4）より大きい値にして、新しい難易度帯
+  /// （交差の解禁）に入るタイミングで往復回数も一段増えるようにしている
+  /// （Level 3→4の境界で往復回数が減る逆転は起きない値であること）。
   final int baseRepetitions;
 
   /// レベルが1上がるごとに増える往復回数。
@@ -37,8 +41,9 @@ class CrossPauseStepSequenceBuilder {
 
   /// `move`/`transfer`/`cross`/`pause`の所要時間を基準値からどれだけ揺らすかの比率。
   ///
-  /// 例えば0.4なら、基準値の60%〜140%の範囲で速度が変化する。
-  /// 値はプレイテストで調整する暫定値であり、本コミットでは確定しない。
+  /// 例えば0.25なら、基準値の75%〜125%の範囲で速度が変化する。
+  /// プレイテストで「遅くなる回がゆっくりすぎる」との指摘を受け、0.4から
+  /// 引き下げた暫定値であり、今後も調整する。
   final double tempoVariationRatio;
 
   /// 各往復を`transfer`にする確率（0.0〜1.0）。

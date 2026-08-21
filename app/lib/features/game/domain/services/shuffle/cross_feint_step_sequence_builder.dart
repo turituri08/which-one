@@ -16,17 +16,21 @@ import 'shuffle_tempo.dart';
 /// 保持手を変更しないという契約は厳守する。
 class CrossFeintStepSequenceBuilder {
   const CrossFeintStepSequenceBuilder({
-    this.baseRepetitions = 2,
+    this.baseRepetitions = 6,
     this.repetitionIncrementPerLevel = 1,
     this.repetitionDuration = const Duration(milliseconds: 600),
-    this.tempoVariationRatio = 0.4,
+    this.tempoVariationRatio = 0.25,
     this.transferProbability = 0.28,
     this.crossProbability = 0.18,
     this.feintProbability = 0.1,
     this.pauseProbability = 0.06,
   });
 
-  /// Level 1での左右往復回数。
+  /// 往復回数の計算式`baseRepetitions + (level - 1) * repetitionIncrementPerLevel`
+  /// における基準値。この戦略はLevel 7以上にしか使われないため、
+  /// `CrossPauseStepSequenceBuilder`（5）より大きい値にして、新しい難易度帯
+  /// （フェイントの解禁）に入るタイミングで往復回数も一段増えるようにしている
+  /// （Level 6→7の境界で往復回数が減る逆転は起きない値であること）。
   final int baseRepetitions;
 
   /// レベルが1上がるごとに増える往復回数。
@@ -36,7 +40,8 @@ class CrossFeintStepSequenceBuilder {
   final Duration repetitionDuration;
 
   /// `move`/`transfer`/`cross`/`feint`/`pause`の所要時間を基準値から
-  /// どれだけ揺らすかの比率。値はプレイテストで調整する暫定値。
+  /// どれだけ揺らすかの比率。プレイテストで「遅くなる回がゆっくりすぎる」
+  /// との指摘を受け、0.4から引き下げた暫定値であり、今後も調整する。
   final double tempoVariationRatio;
 
   /// 各往復を`transfer`にする確率（0.0〜1.0）。

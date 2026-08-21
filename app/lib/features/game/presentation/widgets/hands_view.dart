@@ -147,6 +147,7 @@ class _HandsViewState extends State<HandsView> with TickerProviderStateMixin {
                 plan: animatedPlan,
                 elapsed: elapsed,
                 returnProgress: returnProgress,
+                level: state.level,
               ),
             ),
             for (final int handIndex in <int>[0, 1]) _buildTapTarget(size, handIndex, canAnswer),

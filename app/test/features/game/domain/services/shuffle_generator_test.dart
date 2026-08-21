@@ -158,6 +158,24 @@ void main() {
       expect(level2.totalDuration, greaterThan(level1.totalDuration));
     });
 
+    test('往復回数（step数）はband境界（Level 3→4、Level 6→7）を含めてLevel 1〜9で単調に増える', () {
+      // 各builderのbaseRepetitionsが揃っていないと、band境界で往復回数が
+      // 減る逆転が起き得る（過去に実際に発生した回帰）。stepの型はband
+      // ごとに変わるが1往復＝1stepである点は共通なので、steps.lengthで
+      // 往復回数を直接比較できる。
+      int previousStepCount = 0;
+      for (int level = 1; level <= 9; level++) {
+        final ShufflePlan plan = generator.planFor(level: level, seed: 1);
+
+        expect(
+          plan.steps.length,
+          greaterThan(previousStepCount),
+          reason: 'Level $levelの往復回数が直前のレベル以下になっています',
+        );
+        previousStepCount = plan.steps.length;
+      }
+    });
+
     test('検証に失敗した場合、別シードで再生成される', () {
       final ShuffleGenerator generatorWithFakeValidator = ShuffleGenerator(
         validator: _FailNTimesValidator(2),

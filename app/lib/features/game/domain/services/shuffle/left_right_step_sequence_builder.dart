@@ -17,13 +17,16 @@ import 'shuffle_step_sequence.dart';
 /// （その場合、開始時の保持手がそのまま正解位置になる）。
 class LeftRightStepSequenceBuilder {
   const LeftRightStepSequenceBuilder({
-    this.baseRepetitions = 2,
+    this.baseRepetitions = 4,
     this.repetitionIncrementPerLevel = 1,
     this.repetitionDuration = const Duration(milliseconds: 600),
     this.transferProbability = 0.35,
   });
 
   /// Level 1での左右往復回数。
+  ///
+  /// プレイテストで「Level 1から手数が少なすぎる」との指摘を受け、
+  /// 2から引き上げた暫定値。今後も調整する。
   final int baseRepetitions;
 
   /// レベルが1上がるごとに増える往復回数。
